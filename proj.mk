@@ -9,9 +9,8 @@ COMMA:=,
 EMPTY:=#
 SPACE:=$(empty) $(empty)
 
-$(info proj.mk ... PWD: $(PWD))
-$(info proj.mk ... PROJDIR: $(PROJDIR))
-$(info proj.mk ... MAKECMDGOALS: $(MAKECMDGOALS))
+$(info proj.mk ... MAKECMDGOALS: $(MAKECMDGOALS), PWD: $(PWD), \
+  PROJDIR: $(PROJDIR), PLATFORM: $(PLATFORM))
 
 ifeq ("$(or $(MSYSTEM),$(OS))","Windows_NT")
 MMWSDK_HOST_PLATFORM=windows
@@ -23,13 +22,34 @@ endif
 
 #------------------------------------
 #
+C++ =$(CROSS_COMPILE)g++
+CC=$(CROSS_COMPILE)gcc
+AR=$(CROSS_COMPILE)ar
 MKDIR=mkdir -p
-CP=cp -dpR
+#CP=cp -dpR
+CP=rsync -a --info=progress2
 RM=rm -rf
+OBJDUMP=$(CROSS_COMPILE)objdump
+OBJCOPY=$(CROSS_COMPILE)objcopy
+NM=$(CROSS_COMPILE)nm
+SIZE=$(CROSS_COMPILE)size
 DOXYGEN=doxygen
+CC_TARGET_HELP=$(CC) $(PLATFORM_CFLAGS) $(PLATFORM_LDFLAGS) -Q --help=target
 
 DEP=$(1).d
 DEPFLAGS=-MM -MF $(call DEP,$(1)) -MT $(1)
+
+#------------------------------------
+# $(shell touch /tmp/dummy.h; $(CC_DUMP_DEFINED) /tmp/dummy.h)
+#
+CC_DUMP_DEFINED=$(CC) -dM -E
+C++_DUMP_DEFINED=$(C++) -dM -E -x c++
+
+#------------------------------------
+# EXTRA_PATH+=$(TOOLCHAIN_PATH:%=%/bin) $(TEST26DIR:%=%/tool/bin)
+# export PATH:=$(call ENVPATH,$(EXTRA_PATH))
+#
+ENVPATH=$(subst $(SPACE),:,$(call UNIQ,$1) $(PATH))
 
 #------------------------------------
 # $(info AaBbccXXDF TOLOWER: $(call TOLOWER,AaBbccXXDF))
@@ -40,6 +60,11 @@ UPPERCASECHARACTERS=A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 LOWERCASECHARACTERS=a b c d e f g h i j k l m n o p q r s t u v w x y z
 TOLOWER=$(call MAPTO,$(UPPERCASECHARACTERS),$(LOWERCASECHARACTERS),$1)
 TOUPPER=$(call MAPTO,$(LOWERCASECHARACTERS),$(UPPERCASECHARACTERS),$1)
+
+#------------------------------------
+# $(call UNIQ,b b a a) # -> b a
+#
+UNIQ=$(if $1,$(strip $(firstword $1) $(call UNIQ,$(filter-out $(firstword $1),$1))))
 
 #------------------------------------
 #
