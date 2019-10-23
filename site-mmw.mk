@@ -69,7 +69,8 @@ $(1)_LIBS+=$$(filter %.$$(C674_LIB_EXT),$$($1)) $$(wildcard \
   $$(C674x_MATHLIB_INSTALL_PATH)/packages/ti/mathlib/lib/mathlib.$$(C674_LIB_EXT) \
   $$(C64Px_DSPLIB_INSTALL_PATH)/packages/ti/dsplib/lib/dsplib.ae64P \
   $$(MMWAVE_SDK_INSTALL_PATH)/ti/drivers/osal/lib/libosal_$$(MMWAVE_SDK_DEVICE_TYPE).$$(C674_LIB_EXT))
-$(1)_LINKER_CMD?=$$(firstword $$(filter %linker.cmd,$$($1)) $$(wildcard dss*linker.cmd linker.cmd))
+$(1)_LINKER_CMD?=$$(if $$(filter c674x_linker.cmd %/c674x_linker.cmd,$$($1)),,$$(PLATFORM_C674X_LINK_CMD)) \
+  $$(filter %linker.cmd,$$($1))
 $(1)_CPPFLAGS+=-I$$(PWD) -I$$(PWD)/include -I$$(PWD)/inc \
   -I$$(PROJDIR) -I$$(PROJDIR)/common -I$$(PROJDIR)/include \
   -I$$(C674x_MATHLIB_INSTALL_PATH)/packages \
@@ -101,7 +102,7 @@ $$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIB
 	$$(C674_LD) $$(DSS_BUILD1_LDFLAGS) \
 	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@) \
 	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
-	  $$(PLATFORM_C674X_LINK_CMD) $$($(1)_LINKER_CMD) $$(C674_LD_RTS_FLAGS) \
+	  $$($(1)_LINKER_CMD) $$(C674_LD_RTS_FLAGS) \
 	  -o $$@
 
 $(1)_clean:
@@ -134,7 +135,8 @@ $(1)_OBJ_CPP+=$$(patsubst %.cpp,$$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT),$$(filter %.
 $(1)_OBJ_ASM+=$$(patsubst %.asm,$$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT),$$(filter %.asm,$$($1)))
 $(1)_LIBS+=$$(filter %.$$(R4F_LIB_EXT),$$($1)) $$(wildcard \
   $$(MMWAVE_SDK_INSTALL_PATH)/ti/drivers/osal/lib/libosal_$$(MMWAVE_SDK_DEVICE_TYPE).$$(R4F_LIB_EXT))
-$(1)_LINKER_CMD?=$$(firstword $$(filter %linker.cmd,$$($1)) $$(wildcard mss*linker.cmd linker.cmd))
+$(1)_LINKER_CMD?=$$(if $$(filter r4f_linker.cmd %/r4f_linker.cmd,$$($1)),,$$(PLATFORM_R4F_LINK_CMD)) \
+  $$(filter %linker.cmd,$$($1))
 $(1)_CPPFLAGS+=-I$$(PWD) -I$$(PWD)/include -I$$(PWD)/inc \
   -I$$(PROJDIR) -I$$(PROJDIR)/common -I$$(PROJDIR)/include \
   $$(if $$($(1)_RTSCDIR),--cmd_file=$$($(1)_RTSCDIR)/compiler.opt) \
@@ -163,7 +165,7 @@ $$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIB
 	$$(R4F_LD) $$(MSS_BUILD1_LDFLAGS)  \
 	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@) \
 	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
-	  $$(PLATFORM_R4F_LINK_CMD) $$($(1)_LINKER_CMD) $$(R4F_LD_RTS_FLAGS) \
+	  $$($(1)_LINKER_CMD) $$(R4F_LD_RTS_FLAGS) \
 	  -o $$@
 
 $(1)_clean:
