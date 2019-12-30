@@ -10,7 +10,9 @@ else
   export MMWAVE_SDK_TOOLS_INSTALL_PATH?=/home/joelai/ti
 #  export MMWAVE_SECDEV_INSTALL_PATH?=/media/sf_dc/03_arad/proj
 endif
-export MMWAVE_SDK_INSTALL_PATH?=$(MMWAVE_SDK_TOOLS_INSTALL_PATH)/mmwave_sdk_02_00_00_04/packages
+
+#export MMWAVE_SDK_INSTALL_PATH?=$(MMWAVE_SDK_TOOLS_INSTALL_PATH)/mmwave_sdk_02_00_00_04/packages
+export MMWAVE_SDK_INSTALL_PATH?=$(lastword $(sort $(wildcard $(MMWAVE_SDK_TOOLS_INSTALL_PATH)/mmwave_sdk_*/packages)))
 
 #export MMWAVE_SECDEV_HSIMAGE_CFG=${MMWAVE_SECDEV_INSTALL_PATH}/hs_image_creator/hsimage.cfg
 
