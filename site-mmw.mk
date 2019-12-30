@@ -89,8 +89,8 @@ DSS_BUILD1_OBJ_CPP+=$$($(1)_OBJ_CPP)
 DSS_BUILD1_OBJ_ASM+=$$($(1)_OBJ_ASM)
 
 $$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): DSS_BUILD1_CPPFLAGS+=$$($(1)_CPPFLAGS)
-$$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): DSS_BUILD1_CFLAGS+=
-$$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): DSS_BUILD1_CXXFLAGS+=
+$$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): DSS_BUILD1_CFLAGS+=$$($(1)_CFLAGS)
+$$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): DSS_BUILD1_CXXFLAGS+=$$($(1)_CXXFLAGS)
 $$($(1)_BUILD_APP): DSS_BUILD1_LDFLAGS+=$$($(1)_LDFLAGS)
 $$($(1)_BUILD_LIB): DSS_BUILD1_ARFLAGS?=$$(or $$($(1)_ARFLAGS),$$(C674_AR_OPTS))
 
@@ -152,9 +152,10 @@ MSS_BUILD1_OBJ_CPP+=$$($(1)_OBJ_CPP)
 MSS_BUILD1_OBJ_ASM+=$$($(1)_OBJ_ASM)
 
 $$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): MSS_BUILD1_CPPFLAGS+=$$($(1)_CPPFLAGS)
-$$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): MSS_BUILD1_CFLAGS+=
-$$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): MSS_BUILD1_CXXFLAGS+=
+$$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): MSS_BUILD1_CFLAGS+=$$($(1)_CFLAGS)
+$$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): MSS_BUILD1_CXXFLAGS+=$$($(1)_CXXFLAGS)
 $$($(1)_BUILD_APP): MSS_BUILD1_LDFLAGS+=$$($(1)_LDFLAGS)
+$$($(1)_BUILD_APP): MSS_BUILD1_LDFLAGS2+=$$($(1)_LDFLAGS2)
 $$($(1)_BUILD_LIB): MSS_BUILD1_ARFLAGS+=$$(or $$($(1)_ARFLAGS),$$(R4F_AR_OPTS))
 
 $$($(1)_BUILD_LIB): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
@@ -168,7 +169,7 @@ $$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIB
 	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@) \
 	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
 	  $$($(1)_LINKER_CMD) $$(R4F_LD_RTS_FLAGS) \
-	  -o $$@
+	  -o $$@ $$(MSS_BUILD1_LDFLAGS2)
 
 $(1)_clean:
 	$(RM) $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
