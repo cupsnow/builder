@@ -169,7 +169,8 @@ $$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIB
 	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@) \
 	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
 	  $$($(1)_LINKER_CMD) $$(R4F_LD_RTS_FLAGS) \
-	  -o $$@ $$(MSS_BUILD1_LDFLAGS2)
+	  -o $$@ $$(MSS_BUILD1_LDFLAGS2) || \
+	  ($$(RM) $$@ && false)
 
 $(1)_clean:
 	$(RM) $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
