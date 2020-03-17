@@ -188,6 +188,19 @@ $$(sort $$($(or $(1),BUILD2_BUILDDIR)_OBJGEN)): $$(BUILDDIR)/$(1:%=%/)%.o: %
 endef
 
 #------------------------------------
+define GITPROJ_DIST
+$(or $(1),dist): DISTNAME=$$(or $$(shell PATH=$$(PATH) && git describe),master-$$(shell date '+%s'))
+$(or $(1),dist):
+	$$(RM) $$(BUILDDIR)/$$(DISTNAME)
+	$$(MKDIR) $$(BUILDDIR)
+	git clone --recurse-submodules ` ( cd $$(PROJDIR) && git remote get-url origin ) ` $$(BUILDDIR)/$$(DISTNAME)
+	cd $$(BUILDDIR)/$$(DISTNAME) && \
+	  git submodule foreach " ( rm -rf .git .gitmodules .gitignore ) "; rm -rf .git .gitmodules .gitignore playground
+	$$(MKDIR) $$(DESTDIR)
+	tar -Jcvf $$(DESTDIR)/$$(DISTNAME).tar.xz -C $$(BUILDDIR) $$(DISTNAME)
+	$$(RM) $$(BUILDDIR)/$$(DISTNAME)
+endef
+
 #------------------------------------
 #------------------------------------
 #------------------------------------

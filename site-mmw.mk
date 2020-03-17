@@ -197,5 +197,65 @@ $$(sort $$($(1)_OBJ_ASM)): $$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT): %.asm
 endef
 
 #------------------------------------
+#
+define MMW_GENIMG
+$(or $(1),genimg): dss_EXE=$$(DESTDIR)/dss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(C674_EXE_EXT)
+$(or $(1),genimg): mss_EXE=$$(DESTDIR)/mss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(R4F_EXE_EXT)
+$(or $(1),genimg): image=$$(DESTDIR)/image.bin
+$(or $(1),genimg): bss_bin?=$$($$(call TOUPPER,$$(MMWAVE_SDK_DEVICE_TYPE))_RADARSS_IMAGE_BIN)
+$(or $(1),genimg):
+	$$(MKDIR) $$(BUILDDIR)/genimg $$(dir $$(image))
+  ifneq ("$$(strip $$(wildcard $$(GENERATE_BIN)))","")
+    ifneq ("$$(filter-out NULL,$$(dss_EXE))","")
+	$$(GENERATE_BIN) $$(dss_EXE) \
+	  $$(BUILDDIR)/genimg/$$(basename $$(notdir $$(dss_EXE))).bin
+    endif
+	$$(GENERATE_BIN) $$(mss_EXE) \
+	  $$(BUILDDIR)/genimg/$$(basename $$(notdir $$(mss_EXE))).bin
+	$$(GENERATE_METAIMAGE) $$(abspath $$(image)) 0x00000006 \
+	  $$(BUILDDIR)/genimg/$$(basename $$(notdir $$(mss_EXE))).bin \
+	  $$(if $$(filter-out NULL,$$(bss_bin)),$$(bss_bin),NULL) \
+	  $$(if $$(filter-out NULL,$$(dss_EXE)),$$(BUILDDIR)/genimg/$$(basename $$(notdir $$(dss_EXE))).bin,NULL)
+	-cd $$(BUILDDIR)/genimg && $$(GENERATE_HS_METAIMAGE) \
+	  $$(basename $$(abspath $$(image)))_secure.bin 0x00000006 $$(mss_EXE) \
+	  $$(if $$(filter-out NULL,$$(bss_bin)),$$(bss_bin),NULL) \
+	  $$(if $$(filter-out NULL,$$(dss_EXE)),$$(dss_EXE),NULL) \
+	  $$(MMWAVE_SECDEV_HSIMAGE_CFG)
+  else
+	$$(GENERATE_METAIMAGE) $$(abspath $$(image)) $$(SHMEM_ALLOC) $$(mss_EXE) \
+	  $$(if $$(filter-out NULL,$$(bss_bin)),$$(bss_bin),NULL) \
+	  $$(if $$(filter-out NULL,$$(dss_EXE)),$$(dss_EXE),NULL)
+	-cd $$(BUILDDIR)/genimg && $$(GENERATE_HS_METAIMAGE) \
+	  $$(basename $$(abspath $$(image)))_secure.bin $$(SHMEM_ALLOC) $$(mss_EXE) \
+	  $$(if $$(filter-out NULL,$$(bss_bin)),$$(bss_bin),NULL) \
+	  $$(if $$(filter-out NULL,$$(dss_EXE)),$$(dss_EXE),NULL) \
+	  $$(MMWAVE_SECDEV_HSIMAGE_CFG)
+  endif
+	$$(RM) $$(BUILDDIR)/genimg
+endef
+
+# when error about database
+# rm -rf /home/joelai/.ti/TICloudAgent
+define MMW_FLASH
+$(or $(1),flash): UNIFLASH_BASE_PATH=/home/joelai/ti/uniflash_5.1.0/deskdb/content/TICloudAgent/linux/ccs_base
+$(or $(1),flash): UNIFLASH_USER_PATH=/home/joelai/ti/uniflash_userdata
+$(or $(1),flash): image=$$(DESTDIR)/image_secure.bin
+$(or $(1),flash): sbl=$$(wildcard ext/xwr16xx_sbl_secure.sbin)
+$(or $(1),flash): port=$$(firstword $$(wildcard /dev/ttyUSB*))
+$(or $(1),flash):
+	[ ! -e "$$(port)" ] && echo "Missing port: $$(port)" && false || true
+	{ lsof $$(port) > /dev/null; } && echo "Occupied port: $$(port)" && false || true
+	PATH=$$(UNIFLASH_BASE_PATH)/common/bin:$$$$PATH \
+	  $$(UNIFLASH_BASE_PATH)/DebugServer/bin/DSLite flash \
+	  --config=$$(UNIFLASH_USER_PATH)/awr1642.ccxml \
+	  --load-settings=$$(UNIFLASH_USER_PATH)/settings.ufsettings \
+	  --setting=COMPort=$$(port) --setting=FlashVerboseMode=true \
+	  --list-settings=.* --verbose \
+	  $$(and $$(image),"$$(abspath $$(image),1)") \
+	  $$(and $$(sbl),"$$(abspath $$(sbl),4)")
+endef
+
+#------------------------------------
+#------------------------------------
 #------------------------------------
 #------------------------------------
