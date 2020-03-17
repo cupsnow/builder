@@ -217,7 +217,7 @@ $(or $(1),genimg):
 	  $$(if $$(filter-out NULL,$$(bss_bin)),$$(bss_bin),NULL) \
 	  $$(if $$(filter-out NULL,$$(dss_EXE)),$$(BUILDDIR)/genimg/$$(basename $$(notdir $$(dss_EXE))).bin,NULL)
 	-cd $$(BUILDDIR)/genimg && $$(GENERATE_HS_METAIMAGE) \
-	  $$(basename $$(abspath $$(image)))_secure.bin 0x00000006 $$(mss_EXE) \
+	  $$(basename $$(abspath $$(image))).sbin 0x00000006 $$(mss_EXE) \
 	  $$(if $$(filter-out NULL,$$(bss_bin)),$$(bss_bin),NULL) \
 	  $$(if $$(filter-out NULL,$$(dss_EXE)),$$(dss_EXE),NULL) \
 	  $$(MMWAVE_SECDEV_HSIMAGE_CFG)
@@ -226,7 +226,7 @@ $(or $(1),genimg):
 	  $$(if $$(filter-out NULL,$$(bss_bin)),$$(bss_bin),NULL) \
 	  $$(if $$(filter-out NULL,$$(dss_EXE)),$$(dss_EXE),NULL)
 	-cd $$(BUILDDIR)/genimg && $$(GENERATE_HS_METAIMAGE) \
-	  $$(basename $$(abspath $$(image)))_secure.bin $$(SHMEM_ALLOC) $$(mss_EXE) \
+	  $$(basename $$(abspath $$(image))).sbin $$(SHMEM_ALLOC) $$(mss_EXE) \
 	  $$(if $$(filter-out NULL,$$(bss_bin)),$$(bss_bin),NULL) \
 	  $$(if $$(filter-out NULL,$$(dss_EXE)),$$(dss_EXE),NULL) \
 	  $$(MMWAVE_SECDEV_HSIMAGE_CFG)
@@ -239,7 +239,7 @@ endef
 define MMW_FLASH
 $(or $(1),flash): UNIFLASH_BASE_PATH=/home/joelai/ti/uniflash_5.1.0/deskdb/content/TICloudAgent/linux/ccs_base
 $(or $(1),flash): UNIFLASH_USER_PATH=/home/joelai/ti/uniflash_userdata
-$(or $(1),flash): image=$$(DESTDIR)/image_secure.bin
+$(or $(1),flash): image=$$(DESTDIR)/image.sbin
 $(or $(1),flash): sbl=$$(wildcard ext/xwr16xx_sbl_secure.sbin)
 $(or $(1),flash): port=$$(firstword $$(wildcard /dev/ttyUSB*))
 $(or $(1),flash):
