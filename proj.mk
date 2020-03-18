@@ -157,7 +157,6 @@ $$($(1)_APP) $$($(1)_LIB): BUILD2_C++ ?=$$(or $$($(1)_C++),$$(C++))
 $$($(1)_APP): BUILD2_LDFLAGS+=$$($(1)_LDFLAGS)
 $$($(1)_LIB): BUILD2_ARFLAGS?=$$(or $$($(1)_ARFLAGS),rcs)
 $$($(1)_LIB): BUILD2_AR?=$$(or $$($(1)_AR),$$(AR))
-$1: $$($(1)_APP) $$($(1)_LIB)
 
 $$($(1)_APP): $$($(1)_OBJGEN) | $$($(1)_INOBJ)
 	$$(MKDIR) $$(dir $$@)
