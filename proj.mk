@@ -188,7 +188,7 @@ endef
 
 #------------------------------------
 define GITPROJ_DIST
-$(or $(1),dist): DISTNAME=$$(or $$(shell PATH=$$(PATH) && git describe),master-$$(shell date '+%s'))
+$(or $(1),dist): DISTNAME=$(or $(strip $(2)),$$(or $$(shell PATH=$$(PATH) && git describe),master-$$(shell date '+%s')))
 $(or $(1),dist):
 	$$(RM) $$(BUILDDIR)/$$(DISTNAME)
 	$$(MKDIR) $$(BUILDDIR)

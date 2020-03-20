@@ -199,10 +199,10 @@ endef
 #------------------------------------
 #
 define MMW_GENIMG
-$(or $(1),genimg): dss_EXE=$$(DESTDIR)/dss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(C674_EXE_EXT)
-$(or $(1),genimg): mss_EXE=$$(DESTDIR)/mss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(R4F_EXE_EXT)
-$(or $(1),genimg): image=$$(DESTDIR)/image.bin
-$(or $(1),genimg): bss_bin?=$$($$(call TOUPPER,$$(MMWAVE_SDK_DEVICE_TYPE))_RADARSS_IMAGE_BIN)
+$(or $(1),genimg): image=$(or $(strip $(2)),$$(DESTDIR)/image.bin)
+$(or $(1),genimg): mss_EXE=$(or $(strip $(3)),$$(DESTDIR)/mss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(R4F_EXE_EXT))
+$(or $(1),genimg): bss_bin?=$(or $(strip $(4)),$$($$(call TOUPPER,$$(MMWAVE_SDK_DEVICE_TYPE))_RADARSS_IMAGE_BIN))
+$(or $(1),genimg): dss_EXE=$(or $(strip $(5)),$(or $(2),$$(DESTDIR)/dss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(C674_EXE_EXT)))
 $(or $(1),genimg):
 	$$(MKDIR) $$(BUILDDIR)/genimg $$(dir $$(image))
   ifneq ("$$(strip $$(wildcard $$(GENERATE_BIN)))","")
@@ -237,11 +237,11 @@ endef
 # when error about database
 # rm -rf /home/joelai/.ti/TICloudAgent
 define MMW_FLASH
+$(or $(1),flash): image=$(or $(strip $(2)),$$(DESTDIR)/image.sbin)
+$(or $(1),flash): sbl=$(or $(strip $(3)),$$(wildcard ext/xwr16xx_sbl_secure.sbin))
+$(or $(1),flash): port=$(or $(strip $(4)),$$(firstword $$(wildcard /dev/ttyUSB*)))
 $(or $(1),flash): UNIFLASH_BASE_PATH=/home/joelai/ti/uniflash_5.1.0/deskdb/content/TICloudAgent/linux/ccs_base
 $(or $(1),flash): UNIFLASH_USER_PATH=/home/joelai/ti/uniflash_userdata
-$(or $(1),flash): image=$$(DESTDIR)/image.sbin
-$(or $(1),flash): sbl=$$(wildcard ext/xwr16xx_sbl_secure.sbin)
-$(or $(1),flash): port=$$(firstword $$(wildcard /dev/ttyUSB*))
 $(or $(1),flash):
 	[ ! -e "$$(port)" ] && echo "Missing port: $$(port)" && false || true
 	{ lsof $$(port) > /dev/null; } && echo "Occupied port: $$(port)" && false || true
@@ -251,8 +251,8 @@ $(or $(1),flash):
 	  --load-settings=$$(UNIFLASH_USER_PATH)/settings.ufsettings \
 	  --setting=COMPort=$$(port) --setting=FlashVerboseMode=true \
 	  --list-settings=.* --verbose \
-	  $$(and $$(image),"$$(abspath $$(image),1)") \
-	  $$(and $$(sbl),"$$(abspath $$(sbl),4)")
+	  $$(and $$(filter-out NULL,$$(image)),"$$(abspath $$(image),1)") \
+	  $$(and $$(filter-out NULL,$$(sbl)),"$$(abspath $$(sbl),4)")
 endef
 
 #------------------------------------
