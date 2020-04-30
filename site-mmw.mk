@@ -102,7 +102,7 @@ $$($(1)_BUILD_LIB): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
 $$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIBS)
 	$$(MKDIR) $$(dir $$@)
 	$$(C674_LD) $$(DSS_BUILD1_LDFLAGS) \
-	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@) \
+	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@).map \
 	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
 	  $$($(1)_LINKER_CMD) $$(C674_LD_RTS_FLAGS) \
 	  -o $$@
@@ -166,7 +166,7 @@ $$($(1)_BUILD_LIB): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
 $$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIBS)
 	$$(MKDIR) $$(dir $$@)
 	$$(R4F_LD) $$(MSS_BUILD1_LDFLAGS)  \
-	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@) \
+	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@).map \
 	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
 	  $$($(1)_LINKER_CMD) $$(R4F_LD_RTS_FLAGS) \
 	  -o $$@ $$(MSS_BUILD1_LDFLAGS2) || \
