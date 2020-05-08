@@ -101,8 +101,9 @@ $$($(1)_BUILD_LIB): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
 
 $$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIBS)
 	$$(MKDIR) $$(dir $$@)
-	$$(C674_LD) $$(DSS_BUILD1_LDFLAGS) \
-	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@).map \
+	$$(C674_LD) --list_directory=$$(dir $$@) \
+	  $$(DSS_BUILD1_LDFLAGS) \
+	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@).map --mapfile_contents=all \
 	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
 	  $$($(1)_LINKER_CMD) $$(C674_LD_RTS_FLAGS) \
 	  -o $$@
@@ -115,7 +116,8 @@ endef
 define DSS_BUILD1_COMPILE
 $$(sort $$($(1)_OBJ_C)): $$($(1)_BUILDDIR)/%.$$(C674_OBJ_EXT): %.c
 	$$(MKDIR) $$(@D)
-	$$(C674_CC) -c $$(DSS_BUILD1_CPPFLAGS) $$(DSS_BUILD1_CFLAGS) \
+	$$(C674_CC) -c --list_directory=$$(dir $$@) \
+	  $$(DSS_BUILD1_CPPFLAGS) $$(DSS_BUILD1_CFLAGS) \
 	  "-ppd=$(basename $$@).$(C674_DEP_EXT)" "$$<" --output_file $$@
 
 $$(sort $$($(1)_OBJ_CPP)): $$($(1)_BUILDDIR)/%.$$(C674_OBJ_EXT): %.cpp
@@ -165,8 +167,9 @@ $$($(1)_BUILD_LIB): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
 
 $$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIBS)
 	$$(MKDIR) $$(dir $$@)
-	$$(R4F_LD) $$(MSS_BUILD1_LDFLAGS)  \
-	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@).map \
+	$$(R4F_LD) --list_directory=$$(dir $$@) \
+	  $$(MSS_BUILD1_LDFLAGS)  \
+	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@).map --mapfile_contents=all \
 	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
 	  $$($(1)_LINKER_CMD) $$(R4F_LD_RTS_FLAGS) \
 	  -o $$@ $$(MSS_BUILD1_LDFLAGS2) || \
@@ -180,8 +183,9 @@ endef
 define MSS_BUILD1_COMPILE
 $$(sort $$($(1)_OBJ_C)): $$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT): %.c
 	$$(MKDIR) $$(@D)
-	$$(R4F_CC) -c $$(MSS_BUILD1_CPPFLAGS) $$(MSS_BUILD1_CFLAGS) \
-	  "-ppd=$$(basename $$@).$$(R4F_DEP_EXT)" "$$<" --output_file $$@
+	$$(R4F_CC) -c --list_directory=$$(dir $$@) \
+	  $$(MSS_BUILD1_CPPFLAGS) $$(MSS_BUILD1_CFLAGS) \
+	  "-ppd=$$(basename $$@).$$(R4F_DEP_EXT)" "$$<" --output_file $$@ \
 
 $$(sort $$($(1)_OBJ_CPP)): $$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT): %.cpp
 	$$(MKDIR) $$(@D)
