@@ -244,6 +244,7 @@ define MMW_FLASH
 $(or $(1),flash): image=$(or $(strip $(2)),$$(DESTDIR)/image.sbin)
 $(or $(1),flash): sbl=$(or $(strip $(3)),$$(wildcard ext/xwr16xx_sbl_secure.sbin))
 $(or $(1),flash): port=$(or $(strip $(4)),$$(firstword $$(wildcard /dev/ttyUSB*)))
+$(or $(1),flash): ccxml=$(or $(strip $(5)),$$(UNIFLASH_USER_PATH)/$$(or $$(if $$(filter awr16xx,$$(MMWAVE_SDK_DEVICE)),awr1642.ccxml)))
 $(or $(1),flash): UNIFLASH_BASE_PATH=/home/joelai/ti/uniflash_6.0.0/deskdb/content/TICloudAgent/linux/ccs_base
 #$(or $(1),flash): UNIFLASH_BASE_PATH=/home/joelai/ti/uniflash_5.1.0/deskdb/content/TICloudAgent/linux/ccs_base
 $(or $(1),flash): UNIFLASH_USER_PATH=/home/joelai/02_dev/uniflash_userdata
@@ -252,8 +253,7 @@ $(or $(1),flash):
 	{ lsof $$(port) > /dev/null; } && echo "Occupied port: $$(port)" && false || true
 	PATH=$$(UNIFLASH_BASE_PATH)/common/bin:$$$$PATH \
 	  $$(UNIFLASH_BASE_PATH)/DebugServer/bin/DSLite flash \
-	  --config=$$(UNIFLASH_USER_PATH)/$(or \
-	    $(if $(filter awr16xx,$(MMWAVE_SDK_DEVICE)),awr1642.ccxml)) \
+	  --config=$$(ccxml) \
 	  --load-settings=$$(UNIFLASH_USER_PATH)/settings.ufsettings \
 	  --setting=COMPort=$$(port) --setting=FlashVerboseMode=true \
 	  --list-settings=.* --verbose \
