@@ -12,6 +12,8 @@ SPACE:=$(empty) $(empty)
 $(info proj.mk ... MAKECMDGOALS: $(MAKECMDGOALS), PWD: $(PWD), \
   PROJDIR: $(PROJDIR), PLATFORM: $(PLATFORM))
 
+$(foreach i,else-if,$(if $(filter $i,$(.FEATURES)),,$(warning '$i' not support, might ignore)))
+
 ifeq ("$(or $(MSYSTEM),$(OS))","Windows_NT")
 MMWSDK_HOST_PLATFORM=windows
 MMWSDK_HOST_SHEXT=.bat
