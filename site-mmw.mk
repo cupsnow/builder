@@ -254,7 +254,7 @@ $(or $(1),flash): image=$(or $(strip $(2)),$$(DESTDIR)/image.sbin)
 $(or $(1),flash): sbl=$(or $(strip $(3)),$$(wildcard ext/xwr16xx_sbl_secure.sbin))
 $(or $(1),flash): port=$(or $(strip $(4)),$$(firstword $$(wildcard /dev/ttyACM* /dev/ttyUSB*)))
 $(or $(1),flash): ccxml=$(or $(strip $(5)),$$(UNIFLASH_USER_PATH)/$$(or $$(if $$(filter awr16xx,$$(MMWAVE_SDK_DEVICE)),awr1642.ccxml)))
-$(or $(1),flash): UNIFLASH_BASE_PATH=$$(lastword $$(wildcard /home/joelai/ti/uniflash_*/deskdb/content/TICloudAgent/linux/ccs_base))
+$(or $(1),flash): UNIFLASH_BASE_PATH=$$(lastword $$(wildcard /home/joelai/ti/uniflash/deskdb/content/TICloudAgent/linux/ccs_base))
 $(or $(1),flash): UNIFLASH_USER_PATH=$$(HOME)/02_dev/uniflash_userdata
 $(or $(1),flash):
 	[ ! -e "$$(port)" ] && echo "Missing port: $$(port)" && false || true
