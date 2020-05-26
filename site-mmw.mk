@@ -21,6 +21,8 @@ export MMWAVE_SDK_INSTALL_PATH?=$(lastword $(sort $(wildcard $(MMWAVE_SDK_TOOLS_
 include $(MMWAVE_SDK_INSTALL_PATH)/scripts/$(MMWSDK_HOST_PLATFORM)/setenv.mak
 include $(MMWAVE_SDK_INSTALL_PATH)/ti/common/mmwave_sdk.mak
 
+$(info site-mmw.mk ... MMWAVE_SDK_DEVICE: $(MMWAVE_SDK_DEVICE))
+
 #------------------------------------
 # override mmw sdk
 #
@@ -253,7 +255,9 @@ define MMW_FLASH
 $(or $(1),flash): image=$(or $(strip $(2)),$$(DESTDIR)/image.sbin)
 $(or $(1),flash): sbl=$(or $(strip $(3)),$$(wildcard ext/xwr16xx_sbl_secure.sbin))
 $(or $(1),flash): port=$(or $(strip $(4)),$$(firstword $$(wildcard /dev/ttyACM* /dev/ttyUSB*)))
-$(or $(1),flash): ccxml=$(or $(strip $(5)),$$(UNIFLASH_USER_PATH)/$$(or $$(if $$(filter awr16xx,$$(MMWAVE_SDK_DEVICE)),awr1642.ccxml)))
+$(or $(1),flash): ccxml=$(or $(strip $(5)),$$(UNIFLASH_USER_PATH)/$$(or \
+  $$(if $$(filter awr16xx,$$(MMWAVE_SDK_DEVICE)),awr1642.ccxml), \
+  $$(if $$(filter iwr68xx,$$(MMWAVE_SDK_DEVICE)),iwr6843.ccxml)))
 $(or $(1),flash): UNIFLASH_BASE_PATH=$$(lastword $$(wildcard /home/joelai/ti/uniflash/deskdb/content/TICloudAgent/linux/ccs_base))
 $(or $(1),flash): UNIFLASH_USER_PATH=$$(HOME)/02_dev/uniflash_userdata
 $(or $(1),flash):
@@ -265,8 +269,8 @@ $(or $(1),flash):
 	  --load-settings=$$(UNIFLASH_USER_PATH)/settings.ufsettings \
 	  --setting=COMPort=$$(port) --setting=FlashVerboseMode=true \
 	  --list-settings=.* --verbose \
-	  $$(and $$(filter-out NULL,$$(image)),"$$(abspath $$(image),1)") \
-	  $$(and $$(filter-out NULL,$$(sbl)),"$$(abspath $$(sbl),4)")
+	  $$(and $$(filter-out NULL,$$(image)),"$$(abspath $$(image))"$$(COMMA)1) \
+	  $$(and $$(filter-out NULL,$$(sbl)),"$$(abspath $$(sbl))"$$(COMMA)4)
 endef
 
 #------------------------------------
