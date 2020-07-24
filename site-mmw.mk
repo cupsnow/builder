@@ -21,7 +21,8 @@ export MMWAVE_SDK_INSTALL_PATH?=$(lastword $(sort $(wildcard $(MMWAVE_SDK_TOOLS_
 include $(MMWAVE_SDK_INSTALL_PATH)/scripts/$(MMWSDK_HOST_PLATFORM)/setenv.mak
 include $(MMWAVE_SDK_INSTALL_PATH)/ti/common/mmwave_sdk.mak
 
-$(info site-mmw.mk ... MMWAVE_SDK_DEVICE: $(MMWAVE_SDK_DEVICE))
+$(info site-mmw.mk ... MMWAVE_SDK_DEVICE: $(MMWAVE_SDK_DEVICE), \
+  MMWAVE_SDK_INSTALL_PATH: $(MMWAVE_SDK_INSTALL_PATH))
 
 #------------------------------------
 # override mmw sdk
