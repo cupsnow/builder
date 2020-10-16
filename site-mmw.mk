@@ -68,6 +68,11 @@ endef
 # --diag_suppress=179
 #   error #179: variable "XXXXX" was declared but never referenced ...
 #   error #552: variable "XXXXX" was set but never used ...
+#   error #112: statement is unreachable
+#   error #187: dynamic initialization in unreachable
+#   error #225-D: function "XXX" declared implicitly
+#
+# BUILD1_LDFLAGS+=--verbose_diagnostics
 #
 
 #------------------------------------
