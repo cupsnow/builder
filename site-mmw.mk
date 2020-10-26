@@ -218,6 +218,7 @@ $$(sort $$($(1)_OBJ_ASM)): $$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT): %.asm
 endef
 
 #------------------------------------
+# Failed to generate $(image) file when same $(basename FILE) for FILE in image/mss/dss
 #
 define MMW_GENIMG
 $(or $(1),genimg): image=$(or $(strip $(2)),$$(DESTDIR)/image.bin)
