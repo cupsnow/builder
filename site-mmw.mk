@@ -71,6 +71,7 @@ endef
 #   error #112: statement is unreachable
 #   error #187: dynamic initialization in unreachable
 #   error #225-D: function "XXX" declared implicitly
+#   error #169: argument of type "I2CRegs *" is incompatible with parameter of type "uintptr_t"
 #
 # BUILD1_LDFLAGS+=--verbose_diagnostics
 #
