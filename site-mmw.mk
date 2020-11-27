@@ -71,6 +71,7 @@ endef
 #   error #112: statement is unreachable
 #   error #187: dynamic initialization in unreachable
 #   error #225-D: function "XXX" declared implicitly
+#   error #129-D: loop is not reachable
 #
 # BUILD1_LDFLAGS+=--verbose_diagnostics
 #
@@ -97,9 +98,9 @@ $(1)_CPPFLAGS+=-I$$(PWD) -I$$(PWD)/include -I$$(PWD)/inc \
   -I$$(C64Px_DSPLIB_INSTALL_PATH)/packages/ti/dsplib/src/DSP_fft32x32/c64P \
   $$(if $$($(1)_RTSCDIR),--cmd_file=$$($(1)_RTSCDIR)/compiler.opt) \
   $$(C674_CFLAGS)
-$(1)_LDFLAGS+=$(C674_LDFLAGS) \
-  $$(if $$($(1)_RTSCDIR),-l$$($(1)_RTSCDIR)/linker.cmd) \
+$(1)_LDFLAGS+=$$(if $$($(1)_RTSCDIR),-l$$($(1)_RTSCDIR)/linker.cmd) \
   $$(addprefix -l,$$(sort $$($(1)_LIBS)))
+$(1)_ARFLAGS?=r
 
 DSS_BUILD1_OBJ_C+=$$($(1)_OBJ_C)
 DSS_BUILD1_OBJ_CPP+=$$($(1)_OBJ_CPP)
@@ -108,7 +109,7 @@ DSS_BUILD1_OBJ_ASM+=$$($(1)_OBJ_ASM)
 $$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): DSS_BUILD1_CPPFLAGS+=$$($(1)_CPPFLAGS)
 $$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): DSS_BUILD1_CFLAGS+=$$($(1)_CFLAGS)
 $$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): DSS_BUILD1_CXXFLAGS+=$$($(1)_CXXFLAGS)
-$$($(1)_BUILD_APP): DSS_BUILD1_LDFLAGS+=$$($(1)_LDFLAGS)
+$$($(1)_BUILD_APP): DSS_BUILD1_LDFLAGS+=$(C674_LDFLAGS) $$($(1)_LDFLAGS)
 $$($(1)_BUILD_LIB): DSS_BUILD1_ARFLAGS?=$$(or $$($(1)_ARFLAGS),$$(C674_AR_OPTS))
 
 $$($(1)_BUILD_LIB): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
@@ -162,9 +163,9 @@ $(1)_CPPFLAGS+=-I$$(PWD) -I$$(PWD)/include -I$$(PWD)/inc \
   -I$$(PROJDIR) -I$$(PROJDIR)/common -I$$(PROJDIR)/include \
   $$(if $$($(1)_RTSCDIR),--cmd_file=$$($(1)_RTSCDIR)/compiler.opt) \
   $$(R4F_CFLAGS) --display_error_number
-$(1)_LDFLAGS+=$(R4F_LDFLAGS) \
-  $$(if $$($(1)_RTSCDIR),-l$$($(1)_RTSCDIR)/linker.cmd) \
+$(1)_LDFLAGS+=$$(if $$($(1)_RTSCDIR),-l$$($(1)_RTSCDIR)/linker.cmd) \
   $$(addprefix -l,$$(sort $$($(1)_LIBS)))
+$(1)_ARFLAGS?=r
 
 MSS_BUILD1_OBJ_C+=$$($(1)_OBJ_C)
 MSS_BUILD1_OBJ_CPP+=$$($(1)_OBJ_CPP)
@@ -173,7 +174,7 @@ MSS_BUILD1_OBJ_ASM+=$$($(1)_OBJ_ASM)
 $$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): MSS_BUILD1_CPPFLAGS+=$$($(1)_CPPFLAGS)
 $$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): MSS_BUILD1_CFLAGS+=$$($(1)_CFLAGS)
 $$($(1)_BUILD_APP) $$($(1)_BUILD_LIB): MSS_BUILD1_CXXFLAGS+=$$($(1)_CXXFLAGS)
-$$($(1)_BUILD_APP): MSS_BUILD1_LDFLAGS+=$$($(1)_LDFLAGS)
+$$($(1)_BUILD_APP): MSS_BUILD1_LDFLAGS+=$(R4F_LDFLAGS) $$($(1)_LDFLAGS)
 $$($(1)_BUILD_APP): MSS_BUILD1_LDFLAGS2+=$$($(1)_LDFLAGS2)
 $$($(1)_BUILD_LIB): MSS_BUILD1_ARFLAGS+=$$(or $$($(1)_ARFLAGS),$$(R4F_AR_OPTS))
 
@@ -275,7 +276,7 @@ $(or $(1),flash):
 	  --config=$$(ccxml) \
 	  --load-settings=$$(UNIFLASH_USER_PATH)/settings.ufsettings \
 	  --setting=COMPort=$$(port) --setting=FlashVerboseMode=true \
-	  --list-settings=.* --verbose \
+	  --list-settings=.* --verbose  $(DSLITE_FLASH_FLAGS) \
 	  $$(and $$(filter-out NULL,$$(image)),"$$(abspath $$(image))"$$(COMMA)1) \
 	  $$(and $$(filter-out NULL,$$(sbl)),"$$(abspath $$(sbl))"$$(COMMA)4)
 endef
