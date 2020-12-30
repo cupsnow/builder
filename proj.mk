@@ -37,15 +37,17 @@ NM=$(CROSS_COMPILE)nm
 SIZE=$(CROSS_COMPILE)size
 DOXYGEN=doxygen
 CC_TARGET_HELP=$(CC) $(PLATFORM_CFLAGS) $(PLATFORM_LDFLAGS) -Q --help=target
+ANSI_SGR=\033[$(1)m
+ANSI_RED=$(call ANSI_SGR,31)
+ANSI_GREEN=$(call ANSI_SGR,32)
+ANSI_BLUE=$(call ANSI_SGR,34)
+ANSI_CYAN=$(call ANSI_SGR,36)
+ANSI_YELLOW=$(call ANSI_SGR,33)
+ANSI_MAGENTA=$(call ANSI_SGR,35)
+ANSI_COLOR0=$(ANSI_SGR)
 
 DEP=$(1).d
 DEPFLAGS=-MM -MF $(call DEP,$(1)) -MT $(1)
-
-#------------------------------------
-# $(shell touch /tmp/dummy.h; $(CC_DUMP_DEFINED) /tmp/dummy.h)
-#
-CC_DUMP_DEFINED=$(CC) -dM -E
-C++_DUMP_DEFINED=$(C++) -dM -E -x c++
 
 #------------------------------------
 # EXTRA_PATH+=$(TOOLCHAIN_PATH:%=%/bin) $(TEST26DIR:%=%/tool/bin)

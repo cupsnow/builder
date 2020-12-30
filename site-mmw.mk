@@ -226,7 +226,7 @@ define MMW_GENIMG
 $(or $(1),genimg): image=$(or $(strip $(2)),$$(DESTDIR)/image.bin)
 $(or $(1),genimg): mss_EXE=$(or $(strip $(3)),$$(DESTDIR)/mss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(R4F_EXE_EXT))
 $(or $(1),genimg): bss_bin?=$(or $(strip $(4)),$$($$(call TOUPPER,$$(MMWAVE_SDK_DEVICE_TYPE))_RADARSS_IMAGE_BIN))
-$(or $(1),genimg): dss_EXE=$(or $(strip $(5)),$(or $(2),$$(DESTDIR)/dss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(C674_EXE_EXT)))
+$(or $(1),genimg): dss_EXE?=$(or $(strip $(5)),$(or $(2),$$(DESTDIR)/dss_$$(MMWAVE_SDK_DEVICE_TYPE).$$(C674_EXE_EXT)))
 $(or $(1),genimg):
 	$$(MKDIR) $$(BUILDDIR)/genimg $$(dir $$(image))
   ifneq ("$$(strip $$(wildcard $$(GENERATE_BIN)))","")
@@ -261,14 +261,14 @@ endef
 # when error about database
 # rm -rf /home/joelai/.ti/TICloudAgent
 define MMW_FLASH
-$(or $(1),flash): image=$(or $(strip $(2)),$$(DESTDIR)/image.sbin)
-$(or $(1),flash): sbl=$(or $(strip $(3)),$$(wildcard ext/xwr16xx_sbl_secure.sbin))
-$(or $(1),flash): port=$(or $(strip $(4)),$$(firstword $$(wildcard /dev/ttyACM* /dev/ttyUSB*)))
-$(or $(1),flash): ccxml=$(or $(strip $(5)),$$(UNIFLASH_USER_PATH)/$$(or \
+$(or $(1),flash): image?=$(or $(strip $(2)),$$(DESTDIR)/image.sbin)
+$(or $(1),flash): sbl?=$(or $(strip $(3)),$$(wildcard ext/xwr16xx_sbl_secure.sbin))
+$(or $(1),flash): port?=$(or $(strip $(4)),$$(firstword $$(wildcard /dev/ttyACM* /dev/ttyUSB*)))
+$(or $(1),flash): ccxml?=$(or $(strip $(5)),$$(UNIFLASH_USER_PATH)/$$(or \
   $$(if $$(filter awr16xx,$$(MMWAVE_SDK_DEVICE)),awr1642.ccxml), \
   $$(if $$(filter iwr68xx,$$(MMWAVE_SDK_DEVICE)),iwr6843.ccxml)))
-$(or $(1),flash): UNIFLASH_BASE_PATH=$$(lastword $$(wildcard /home/joelai/ti/uniflash/deskdb/content/TICloudAgent/linux/ccs_base))
-$(or $(1),flash): UNIFLASH_USER_PATH=$$(HOME)/02_dev/uniflash_userdata
+$(or $(1),flash): UNIFLASH_BASE_PATH?=$$(lastword $$(wildcard /home/joelai/ti/uniflash/deskdb/content/TICloudAgent/linux/ccs_base))
+$(or $(1),flash): UNIFLASH_USER_PATH?=$$(HOME)/02_dev/uniflash_userdata
 $(or $(1),flash):
 	[ ! -e "$$(port)" ] && echo "Missing port: $$(port)" && false || true
 	{ lsof $$(port) > /dev/null; } && echo "Occupied port: $$(port)" && false || true
