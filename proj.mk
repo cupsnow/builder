@@ -27,6 +27,7 @@ endif
 C++ =$(CROSS_COMPILE)g++
 CC=$(CROSS_COMPILE)gcc
 AR=$(CROSS_COMPILE)ar
+LD=$(CROSS_COMPILE)ld
 MKDIR=mkdir -p
 #CP=cp -dpR
 CP=rsync -a --info=progress2
@@ -171,7 +172,7 @@ $$($(1)_APP): $$($(1)_OBJGEN) | $$($(1)_INOBJ)
 	  $$(BUILD2_CPPFLAGS) $$(if $$(filter %.cpp,$$($1)),$$(BUILD2_CXXFLAGS),$$(BUILD2_CFLAGS)) \
 	  $$(BUILD2_LDFLAGS)
 
-$$($(1)_LIB): $$($(1)_OBJGEN)
+$$($(1)_LIB): $$($(1)_OBJGEN) | $$($(1)_INOBJ)
 	$$(MKDIR) $$(dir $$@)
 	$$(BUILD2_AR) $$(BUILD2_ARFLAGS) $$@ $$($(1)_OBJGEN)
 
@@ -182,7 +183,7 @@ $(1)_clean:
 endef
 
 define BUILD2_OBJGEN
-$$(sort $$($(or $(1),BUILD2_BUILDDIR)_OBJGEN)): $$(BUILDDIR)/$(1:%=%/)%.o: %
+$$(sort $$($(or $(1),BUILD2_BUILDDIR)_OBJGEN)): $$(BUILDDIR)/$(or $(2:%=%/),$(1:%=%/))%.o: %
 	$$(MKDIR) $$(dir $$@)
 	$$(if $$(filter %.cpp,$$<),$$(BUILD2_C++),$$(BUILD2_CC)) \
 	  -c -o $$@ $$< $$(BUILD2_CPPFLAGS) \

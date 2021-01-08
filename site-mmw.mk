@@ -156,6 +156,7 @@ $(1)_BUILDDIR?=$$(PLATFORM_OBJDIR)
 $(1)_OBJ_C+=$$(patsubst %.c,$$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT),$$(filter %.c,$$($1)))
 $(1)_OBJ_CPP+=$$(patsubst %.cpp,$$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT),$$(filter %.cpp,$$($1)))
 $(1)_OBJ_ASM+=$$(patsubst %.asm,$$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT),$$(filter %.asm,$$($1)))
+$(1)_OBJ_O+=$$(filter %.o %.a,$$($1))
 $(1)_LIBS+=$$(filter %.$$(R4F_LIB_EXT),$$($1)) $$(wildcard \
   $$(MMWAVE_SDK_INSTALL_PATH)/ti/drivers/osal/lib/libosal_$$(MMWAVE_SDK_DEVICE_TYPE).$$(R4F_LIB_EXT))
 $(1)_LINKER_CMD?=$$(if $$(filter r4f_linker.cmd %/r4f_linker.cmd,$$($1)),,$$(PLATFORM_R4F_LINK_CMD)) \
@@ -179,17 +180,17 @@ $$($(1)_BUILD_APP): MSS_BUILD1_LDFLAGS+=$(R4F_LDFLAGS) $$($(1)_LDFLAGS)
 $$($(1)_BUILD_APP): MSS_BUILD1_LDFLAGS2+=$$($(1)_LDFLAGS2)
 $$($(1)_BUILD_LIB): MSS_BUILD1_ARFLAGS+=$$(or $$($(1)_ARFLAGS),$$(R4F_AR_OPTS))
 
-$$($(1)_BUILD_LIB): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
+$$($(1)_BUILD_LIB): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) | $$($(1)_OBJ_O)
 	$$(MKDIR) $$(dir $$@)
 	$$(R4F_AR) $$(MSS_BUILD1_ARFLAGS) $$@ \
-	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM)
+	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_OBJ_O)
 
-$$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIBS)
+$$($(1)_BUILD_APP): $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_LIBS) | $$($(1)_OBJ_O)
 	$$(MKDIR) $$(dir $$@)
 	$$(R4F_LD) --list_directory=$$(dir $$@) \
 	  $$(MSS_BUILD1_LDFLAGS)  \
 	  --map_file=$$($(1)_BUILDDIR)/$$(notdir $$@).map --mapfile_contents=all \
-	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) \
+	  $$($(1)_OBJ_C) $$($(1)_OBJ_CPP) $$($(1)_OBJ_ASM) $$($(1)_OBJ_O) \
 	  $$($(1)_LINKER_CMD) $$(R4F_LD_RTS_FLAGS) \
 	  -o $$@ $$(MSS_BUILD1_LDFLAGS2) || \
 	  ($$(RM) $$@ && false)
@@ -204,7 +205,7 @@ $$(sort $$($(1)_OBJ_C)): $$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT): %.c
 	$$(MKDIR) $$(@D)
 	$$(R4F_CC) -c --list_directory=$$(dir $$@) \
 	  $$(MSS_BUILD1_CPPFLAGS) $$(MSS_BUILD1_CFLAGS) \
-	  "-ppd=$$(basename $$@).$$(R4F_DEP_EXT)" "$$<" --output_file $$@ \
+	  "-ppd=$$(basename $$@).$$(R4F_DEP_EXT)" "$$<" --output_file $$@
 
 $$(sort $$($(1)_OBJ_CPP)): $$($(1)_BUILDDIR)/%.$$(R4F_OBJ_EXT): %.cpp
 	$$(MKDIR) $$(@D)
