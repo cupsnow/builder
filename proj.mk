@@ -72,16 +72,13 @@ TOUPPER=$(call MAPTO,$(LOWERCASECHARACTERS),$(UPPERCASECHARACTERS),$1)
 UNIQ=$(if $1,$(strip $(firstword $1) $(call UNIQ,$(filter-out $(firstword $1),$1))))
 
 #------------------------------------
-# define $(1)% cause trouble
+# define $(1) and $(1)% cause trouble
 #
 define COMPONENT_BUILD1
-$(1): $$($(1)_DEP)
-	$$(MAKE) PROJDIR=$$(PROJDIR) DESTDIR=$$(DESTDIR) $(3) -C $(2)
-
+$(1): $(1)_
 $(1)_%: $$($(1)_DEP)
-	$$(MAKE) PROJDIR=$$(PROJDIR) DESTDIR=$$(DESTDIR) $(3) -C $(2) \
+	$$(MAKE) PROJDIR=$$(PROJDIR) DESTDIR=$$(DESTDIR) -C $(2) \
 	  $$(patsubst _%,%,$$(@:$(1)%=%))
-
 .PHONY: $(1) $(1)_%
 endef
 
