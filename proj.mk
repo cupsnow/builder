@@ -75,7 +75,8 @@ UNIQ=$(if $1,$(strip $(firstword $1) $(call UNIQ,$(filter-out $(firstword $1),$1
 # define $(1) and $(1)% cause trouble
 #
 define COMPONENT_BUILD1
-$(1): $(1)_
+$(1): $$($(1)_DEP)
+	$$(MAKE) PROJDIR=$$(PROJDIR) DESTDIR=$$(DESTDIR) -C $(2)
 $(1)_%: $$($(1)_DEP)
 	$$(MAKE) PROJDIR=$$(PROJDIR) DESTDIR=$$(DESTDIR) -C $(2) \
 	  $$(patsubst _%,%,$$(@:$(1)%=%))
