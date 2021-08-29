@@ -9,17 +9,17 @@ COMMA:=,
 EMPTY:=#
 SPACE:=$(empty) $(empty)
 
-$(info proj.mk ... MAKECMDGOALS: $(MAKECMDGOALS), PWD: $(PWD), \
-  PROJDIR: $(PROJDIR), PLATFORM: $(PLATFORM))
+# $(info proj.mk ... MAKECMDGOALS: $(MAKECMDGOALS), PWD: $(PWD), \
+#   PROJDIR: $(PROJDIR), PLATFORM: $(PLATFORM))
 
 $(foreach i,else-if,$(if $(filter $i,$(.FEATURES)),,$(warning '$i' not support, might ignore)))
 
 ifeq ("$(or $(MSYSTEM),$(OS))","Windows_NT")
-MMWSDK_HOST_PLATFORM=windows
-MMWSDK_HOST_SHEXT=.bat
+BUILDER_PLATFORM=windows
+BUILDER_SHEXT=.bat
 else
-MMWSDK_HOST_PLATFORM=unix
-MMWSDK_HOST_SHEXT=.sh
+BUILDER_PLATFORM=unix
+BUILDER_SHEXT=.sh
 endif
 
 #------------------------------------
@@ -36,6 +36,8 @@ OBJDUMP=$(CROSS_COMPILE)objdump
 OBJCOPY=$(CROSS_COMPILE)objcopy
 NM=$(CROSS_COMPILE)nm
 SIZE=$(CROSS_COMPILE)size
+STRIP=$(CROSS_COMPILE)strip
+INSTALL_STRIP=install --strip-program=$(STRIP) -s
 DOXYGEN=doxygen
 CC_TARGET_HELP=$(CC) $(PLATFORM_CFLAGS) $(PLATFORM_LDFLAGS) -Q --help=target
 ANSI_SGR=\033[$(1)m
@@ -45,7 +47,7 @@ ANSI_BLUE=$(call ANSI_SGR,34)
 ANSI_CYAN=$(call ANSI_SGR,36)
 ANSI_YELLOW=$(call ANSI_SGR,33)
 ANSI_MAGENTA=$(call ANSI_SGR,35)
-ANSI_COLOR0=$(ANSI_SGR)
+ANSI_NORMAL=$(ANSI_SGR)
 
 DEP=$(1).d
 DEPFLAGS=-MM -MF $(call DEP,$(1)) -MT $(1)
@@ -70,6 +72,43 @@ TOUPPER=$(call MAPTO,$(LOWERCASECHARACTERS),$(UPPERCASECHARACTERS),$1)
 # $(call UNIQ,b b a a) # -> b a
 #
 UNIQ=$(if $1,$(strip $(firstword $1) $(call UNIQ,$(filter-out $(firstword $1),$1))))
+
+#------------------------------------
+# Linux kernel device tree source containing preprocessor macro
+#
+# $(call CPPDTS,at91-sama5d27_som1_ek.dtb.d1) \
+#   $(addprefix -I,$(DTC_INCDIR)) \
+#   -o at91-sama5d27_som1_ek.dtb.dts at91-sama5d27_som1_ek.dts
+# $(call DTC2,at91-sama5d27_som1_ek.dtb.d2) \
+#   $(addprefix -i,$(DTC_INCDIR)) \
+#   -o at91-sama5d27_som1_ek.dtb at91-sama5d27_som1_ek.dtb.dts
+# cat at91-sama5d27_som1_ek.dtb.d1 at91-sama5d27_som1_ek.dtb.d2 \
+#   > at91-sama5d27_som1_ek.dtb.d
+#
+CPPDTS=gcc -E $(1:%=-Wp,-MMD,%) -nostdinc -undef -D__DTS__ \
+  -x assembler-with-cpp
+DTC2=dtc -O dtb -I dts -b 0 -@ -Wno-interrupt_provider -Wno-unit_address_vs_reg \
+  -Wno-unit_address_format -Wno-avoid_unnecessary_addr_size -Wno-alias_paths \
+  -Wno-graph_child_address -Wno-simple_bus_reg -Wno-unique_unit_address \
+  -Wno-pci_device_reg $(1:%=-d %)
+
+#------------------------------------
+# $(call CP_TAR,$(DESTDIR),$(TOOLCHAIN_SYSROOT), \
+#   --exclude="*/gconv" --exclude="*.a" --exclude="*.o" --exclude="*.la", \
+#   lib lib64 usr/lib usr/lib64)
+#
+define CP_TAR
+	[ -d $(1) ] || $(MKDIR) $(1)
+	PAT1=`echo -n '$(2)' | sed -e "s/^\/*//" -e 's/[\/&.]/\\\&/g'` && \
+	  echo "PAT1: $$PAT1" && \
+	  for i in $(4); do \
+	    [ -d $(2)/$$i ] || \
+		  { echo "Skip unknown $(2)/$$i"; continue ;}; \
+	    { tar -cv --show-transformed-names \
+	      --transform="s/$$PAT1//" $(3) \
+	      $(2)/$$i | tar -xv -C $(1) ;}; \
+	  done
+endef
 
 #------------------------------------
 # define $(1) and $(1)% cause trouble
@@ -156,7 +195,7 @@ $(1)_LDSCRIPT+=$$(filter %.ld,$$($1))
 $(1)_LDFLAGS+=$$($(1)_LDSCRIPT:%=-T %)
 $(or $(2),BUILD2_BUILDDIR)_OBJGEN+=$$($(1)_OBJGEN)
 
-$$($(1)_APP) $$($(1)_LIB): BUILD2_CPPFLAGS+=$$($(1)_CPPFLAGS) 
+$$($(1)_APP) $$($(1)_LIB): BUILD2_CPPFLAGS+=$$($(1)_CPPFLAGS)
 $$($(1)_APP) $$($(1)_LIB): BUILD2_CFLAGS+=$$($(1)_CFLAGS)
 $$($(1)_APP) $$($(1)_LIB): BUILD2_CXXFLAGS+=$$($(1)_CXXFLAGS)
 $$($(1)_APP) $$($(1)_LIB): BUILD2_CC?=$$(or $$($(1)_CC),$$(CC))
@@ -194,6 +233,7 @@ $$(sort $$($(or $(1),BUILD2_BUILDDIR)_OBJGEN)): $$(BUILDDIR)/$(or $(2:%=%/),$(1:
 endef
 
 #------------------------------------
+#
 define GITPROJ_DIST
 $(or $(1),dist): DISTNAME=$(or $(strip $(2)),$$(or $$(shell PATH=$$(PATH) && git describe),master-$$(shell date '+%s')))
 $(or $(1),dist):
@@ -207,6 +247,9 @@ $(or $(1),dist):
 	$$(RM) $$(BUILDDIR)/$$(DISTNAME)
 endef
 
+#------------------------------------
+#------------------------------------
+#------------------------------------
 #------------------------------------
 #------------------------------------
 #------------------------------------
