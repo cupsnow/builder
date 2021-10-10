@@ -6,7 +6,7 @@ SELFDIR=`cd $SELFDIR && pwd -L`
 
 # size of 1st partition in MB
 SZ1=70
-OFFSET1=1
+OFFSET1=2
 
 log_ts () {
   "echo" -n "`date '+%0y/%0m/%0d %0H:%0M:%0S:%0N'`"
@@ -38,10 +38,10 @@ trap "housekeeping" SIGINT SIGTERM EXIT
 housekeeping () {
   # housekeeping whatever temp directory
   [ "$tmpdir" ] && [ -e $tmpdir ] && (log_debug "remove $tmpdir"; rm -rf $tmpdir)
-  
+
   # housekeeping more
 
-  # done  
+  # done
   exit 255
 }
 
@@ -105,12 +105,12 @@ while true; do
     shift
     ;;
 #  --)
-#    if [ -z "$SRC" ]; then 
+#    if [ -z "$SRC" ]; then
 #      SRC=$2
 #      shift
 #    fi
 #    if [ $# -lt 2 ]; then break; fi
-#    if [ -z "$TGT" ]; then 
+#    if [ -z "$TGT" ]; then
 #      TGT=$2
 #      shift
 #    fi
@@ -130,13 +130,17 @@ if [ -z "$DEV" ] || [ ! -e "$DEV" ]; then
   error_exit 1 "Miss device"
 fi
 
+if ! { udevadm info -q path $DEV | grep "/usb[0-9]*"; }; then
+  error_exit 1 "Not usb disk"
+fi
+
 log_debug "sudo to access '$DEV'"
 sudo -k \
   sfdisk -l $DEV
 
 [ -n "$NOCOMMENTARY" ] || { \
   echo ""; \
-  read -t 5 -p "Keep going to re-partition the device ..." || \
+  read -t 5 -p "Press enter in 5 seconds to partition the device ..." || \
     error_exit $? "Timeout"; }
 
 # FS1_FAT=fat16

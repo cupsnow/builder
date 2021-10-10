@@ -28,15 +28,16 @@ C++ =$(CROSS_COMPILE)g++
 CC=$(CROSS_COMPILE)gcc
 AR=$(CROSS_COMPILE)ar
 LD=$(CROSS_COMPILE)ld
-MKDIR=mkdir -p
-#CP=cp -dpR
-CP=rsync -a --info=progress2
-RM=rm -rf
 OBJDUMP=$(CROSS_COMPILE)objdump
 OBJCOPY=$(CROSS_COMPILE)objcopy
 NM=$(CROSS_COMPILE)nm
 SIZE=$(CROSS_COMPILE)size
 STRIP=$(CROSS_COMPILE)strip
+RANLIB=$(CROSS_COMPILE)ranlib
+MKDIR=mkdir -p
+#CP=cp -dpR
+CP=rsync -a --info=progress2
+RM=rm -rf
 INSTALL_STRIP=install --strip-program=$(STRIP) -s
 DOXYGEN=doxygen
 CC_TARGET_HELP=$(CC) $(PLATFORM_CFLAGS) $(PLATFORM_LDFLAGS) -Q --help=target
@@ -51,6 +52,11 @@ ANSI_NORMAL=$(ANSI_SGR)
 
 DEP=$(1).d
 DEPFLAGS=-MM -MF $(call DEP,$(1)) -MT $(1)
+
+
+#------------------------------------
+#var_%:
+#	@echo "$(strip $($(@:var_%=%)))"
 
 #------------------------------------
 # EXTRA_PATH+=$(TOOLCHAIN_PATH:%=%/bin) $(TEST26DIR:%=%/tool/bin)
@@ -102,7 +108,7 @@ define CP_TAR
 	PAT1=`echo -n '$(2)' | sed -e "s/^\/*//" -e 's/[\/&.]/\\\&/g'` && \
 	  echo "PAT1: $$PAT1" && \
 	  for i in $(4); do \
-	    [ -d $(2)/$$i ] || \
+	    [ -e $(2)/$$i ] || \
 		  { echo "Skip unknown $(2)/$$i"; continue ;}; \
 	    { tar -cv --show-transformed-names \
 	      --transform="s/$$PAT1//" $(3) \
