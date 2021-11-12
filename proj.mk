@@ -7,10 +7,15 @@ BUILDDIR?=$(PROJDIR)/build
 DESTDIR?=$(PROJDIR)/destdir
 COMMA:=,
 EMPTY:=#
-SPACE:=$(empty) $(empty)
+SPACE:=$(EMPTY) $(EMPTY)
+TAB:=$(EMPTY)	$(EMPTY)
+define NEWLINE
 
-# $(info proj.mk ... MAKECMDGOALS: $(MAKECMDGOALS), PWD: $(PWD), \
-#   PROJDIR: $(PROJDIR), PLATFORM: $(PLATFORM))
+
+endef
+
+# $(info proj.mk ... MAKECMDGOALS: $(MAKECMDGOALS), PWD: $(PWD) \
+#   $(EMPTY) PROJDIR: $(PROJDIR), PLATFORM: $(PLATFORM))
 
 $(foreach i,else-if,$(if $(filter $i,$(.FEATURES)),,$(warning '$i' not support, might ignore)))
 
@@ -97,6 +102,42 @@ DTC2=dtc -O dtb -I dts -b 0 -@ -Wno-interrupt_provider -Wno-unit_address_vs_reg 
   -Wno-unit_address_format -Wno-avoid_unnecessary_addr_size -Wno-alias_paths \
   -Wno-graph_child_address -Wno-simple_bus_reg -Wno-unique_unit_address \
   -Wno-pci_device_reg $(1:%=-d %)
+
+#------------------------------------
+# $(eval $(call DECL_TOOLCHAIN_GCC,$(HOME)/07_sw/gcc-aarch64-none-linux-gnu))
+# $(eval $(call DECL_TOOLCHAIN_GCC,$(HOME)/07_sw/or1k-linux-musl,OR1K))
+# EXTRA_PATH+=$(TOOLCHAIN_PATH:%=%/bin) $(OR1K_TOOLCHAIN_PATH:%=%/bin)
+#
+define DECL_TOOLCHAIN_GCC
+$(2:%=%_)TOOLCHAIN_PATH=$1
+$(2:%=%_)TOOLCHAIN_SYSROOT=$$(abspath $$(shell $$($(2:%=%_)TOOLCHAIN_PATH)/bin/*-gcc -print-sysroot))
+$(2:%=%_)TOOLCHAIN_TARGET=$$(shell $$($(2:%=%_)TOOLCHAIN_PATH)/bin/*-gcc -dumpmachine)
+$(2:%=%_)CROSS_COMPILE=$$($(2:%=%_)TOOLCHAIN_TARGET)-
+endef
+
+#------------------------------------
+# dtc_dist_install: DESTDIR=$(PROJDIR)/tool
+# dtc_dist_install:
+# 	echo "NO_PYTHON=1" > $(dtc_BUILDDIR)_stain
+# 	$(call RUN_DIST_INSTALL1,dtc,$(dtc_BUILDDIR)_stain $(dtc_BUILDDIR)/Makefile)
+#
+# bb_dist_install: CONFIG_PREFIX=$(BUILD_SYSROOT)
+# bb_dist_install:
+# 	$(call RUN_DIST_INSTALL1,bb CONFIG_PREFIX,$(bb_BUILDDIR)_stain $(bb_BUILDDIR)/Makefile)
+#
+define RUN_DIST_INSTALL1
+if ! md5sum -c "$($(firstword $(1))_BUILDDIR).md5sum"; then \
+  $(MAKE) $(or $(word 2,$(1)),DESTDIR)=$($(firstword $(1))_BUILDDIR)_destdir \
+      $(firstword $(1))_install && \
+  tar -cvf $($(firstword $(1))_BUILDDIR).tar -C $(dir $($(firstword $(1))_BUILDDIR)_destdir) \
+      $(notdir $($(firstword $(1))_BUILDDIR)_destdir) && \
+  md5sum $($(firstword $(1))_BUILDDIR).tar $(wildcard $($(firstword $(1))_BUILDDIR)_footprint) $(2) \
+      > $($(firstword $(1))_BUILDDIR).md5sum && \
+  $(RM) $($(firstword $(1))_BUILDDIR)_destdir; \
+fi
+[ -d "$($(or $(word 2,$(1)),DESTDIR))" ] || $(MKDIR) $($(or $(word 2,$(1)),DESTDIR))
+tar -xvf $($(firstword $(1))_BUILDDIR).tar --strip-components=1 -C $($(or $(word 2,$(1)),DESTDIR))
+endef
 
 #------------------------------------
 # $(call CP_TAR,$(DESTDIR),$(TOOLCHAIN_SYSROOT), \
