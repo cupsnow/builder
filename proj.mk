@@ -1,5 +1,15 @@
 #------------------------------------
-# include $(PROJDIR:%=%/)proj.mk
+# version suggest
+#   from git: `git describe --always`
+#
+# usage
+#   PROJDIR?=$(abspath $(firstword $(wildcard ./builder ../builder))/..)
+#   -include $(PROJDIR:%=%/)builder/site.mk
+#   include $(PROJDIR:%=%/)builder/proj.mk
+#
+# precaution against this builder
+#   check variable collision
+#   assume linux, gnumake, bash, gcc, sed, rsync, md5sum, tar
 #
 PWD:=$(abspath .)
 PROJDIR?=$(PWD)
@@ -13,6 +23,8 @@ define NEWLINE
 
 
 endef
+UPPERCASECHARACTERS=A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+LOWERCASECHARACTERS=a b c d e f g h i j k l m n o p q r s t u v w x y z
 
 # $(info proj.mk ... MAKECMDGOALS: $(MAKECMDGOALS), PWD: $(PWD) \
 #   $(EMPTY) PROJDIR: $(PROJDIR), PLATFORM: $(PLATFORM))
@@ -38,6 +50,7 @@ OBJCOPY=$(CROSS_COMPILE)objcopy
 NM=$(CROSS_COMPILE)nm
 SIZE=$(CROSS_COMPILE)size
 STRIP=$(CROSS_COMPILE)strip
+READELF=$(CROSS_COMPILE)readelf
 RANLIB=$(CROSS_COMPILE)ranlib
 MKDIR=mkdir -p
 #CP=cp -dpR
@@ -55,34 +68,44 @@ ANSI_YELLOW=$(call ANSI_SGR,33)
 ANSI_MAGENTA=$(call ANSI_SGR,35)
 ANSI_NORMAL=$(ANSI_SGR)
 
+ELFDEP=$(READELF) -d $1 | sed -nE "s/.*\(NEEDED\)\s+Shared library:\s*\[(.*)\]/\1/gp"
+
+#------------------------------------
+# compile and auto generate dep.
+#
+#$(BUILDDIR)/%.c.o: %.c | $(BUILDDIR)
+#	$(CC) -c -o $@ -MMD -MP -MT $@ -MF $(@).d $< $(CPPFLAGS) $(CFLAGS)
+#include $(wildcard $(addsuffix .d,$(eddtest1_OBJS)))
+#
+
+#------------------------------------
+#
 DEP=$(1).d
 DEPFLAGS=-MM -MF $(call DEP,$(1)) -MT $(1)
-
 
 #------------------------------------
 #var_%:
 #	@echo "$(strip $($(@:var_%=%)))"
 
 #------------------------------------
-# EXTRA_PATH+=$(TOOLCHAIN_PATH:%=%/bin) $(TEST26DIR:%=%/tool/bin)
-# export PATH:=$(call ENVPATH,$(EXTRA_PATH))
+# $(call UNIQ,b b a a) # -> b a
 #
-ENVPATH=$(subst $(SPACE),:,$(call UNIQ,$1) $(PATH))
+UNIQ=$(if $1,$(strip $(firstword $1) $(call UNIQ,$(filter-out $(firstword $1),$1))))
+
 
 #------------------------------------
 # $(info AaBbccXXDF TOLOWER: $(call TOLOWER,AaBbccXXDF))
 # $(info AaBbccXXDF TOUPPER: $(call TOUPPER,AaBbccXXDF))
 #
 MAPTO=$(subst $(firstword $1),$(firstword $2),$(if $(firstword $1),$(call MAPTO,$(filter-out $(firstword $1),$1),$(filter-out $(firstword $2),$2),$3),$3))
-UPPERCASECHARACTERS=A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
-LOWERCASECHARACTERS=a b c d e f g h i j k l m n o p q r s t u v w x y z
 TOLOWER=$(call MAPTO,$(UPPERCASECHARACTERS),$(LOWERCASECHARACTERS),$1)
 TOUPPER=$(call MAPTO,$(LOWERCASECHARACTERS),$(UPPERCASECHARACTERS),$1)
 
 #------------------------------------
-# $(call UNIQ,b b a a) # -> b a
+# EXTRA_PATH+=$(TOOLCHAIN_PATH:%=%/bin) $(TEST26DIR:%=%/tool/bin)
+# export PATH:=$(call ENVPATH,$(EXTRA_PATH) $(PATH))
 #
-UNIQ=$(if $1,$(strip $(firstword $1) $(call UNIQ,$(filter-out $(firstword $1),$1))))
+ENVPATH=$(subst $(SPACE),:,$(call UNIQ,$(subst :,$(SPACE),$(strip $1))))
 
 #------------------------------------
 # Linux kernel device tree source containing preprocessor macro
@@ -129,14 +152,17 @@ define RUN_DIST_INSTALL1
 if ! md5sum -c "$($(firstword $(1))_BUILDDIR).md5sum"; then \
   $(MAKE) $(or $(word 2,$(1)),DESTDIR)=$($(firstword $(1))_BUILDDIR)_destdir \
       $(firstword $(1))_install && \
-  tar -cvf $($(firstword $(1))_BUILDDIR).tar -C $(dir $($(firstword $(1))_BUILDDIR)_destdir) \
+  tar -cvf $($(firstword $(1))_BUILDDIR).tar \
+      -C $(dir $($(firstword $(1))_BUILDDIR)_destdir) \
       $(notdir $($(firstword $(1))_BUILDDIR)_destdir) && \
-  md5sum $($(firstword $(1))_BUILDDIR).tar $(wildcard $($(firstword $(1))_BUILDDIR)_footprint) $(2) \
+  md5sum $($(firstword $(1))_BUILDDIR).tar \
+      $(wildcard $($(firstword $(1))_BUILDDIR)_footprint $(2)) \
       > $($(firstword $(1))_BUILDDIR).md5sum && \
   $(RM) $($(firstword $(1))_BUILDDIR)_destdir; \
 fi
 [ -d "$($(or $(word 2,$(1)),DESTDIR))" ] || $(MKDIR) $($(or $(word 2,$(1)),DESTDIR))
-tar -xvf $($(firstword $(1))_BUILDDIR).tar --strip-components=1 -C $($(or $(word 2,$(1)),DESTDIR))
+tar -xvf $($(firstword $(1))_BUILDDIR).tar --strip-components=1 \
+    -C $($(or $(word 2,$(1)),DESTDIR))
 endef
 
 #------------------------------------
@@ -155,6 +181,48 @@ define CP_TAR
 	      --transform="s/$$PAT1//" $(3) \
 	      $(2)/$$i | tar -xv -C $(1) ;}; \
 	  done
+endef
+
+#------------------------------------
+# $(eval $(call AC_BUILD2,name dir))
+#
+AC_BUILD2_NAME=$(word 1,$(1))
+AC_BUILD2_DIR=$(word 2,$(1))
+AC_BUILD2_BUILDDIR=$(word 3,$(1))
+define AC_BUILD2
+$(call AC_BUILD2_NAME,$(1))_dir=$$(firstword $$(wildcard $(call AC_BUILD2_DIR,$(1)) $$(PROJDIR)/package/$(call AC_BUILD2_NAME,$(1))))
+$(call AC_BUILD2_NAME,$(1))_BUILDDIR?=$(or $(call AC_BUILD2_BUILDDIR,$(1)),$$(BUILDDIR)/$(call AC_BUILD2_NAME,$(1))-$$(APP_BUILD))
+$(call AC_BUILD2_NAME,$(1))_MAKE=$$(MAKE) DESTDIR=$$(DESTDIR) $$($(call AC_BUILD2_NAME,$(1))_MAKEPARAM) \
+    $$($(call AC_BUILD2_NAME,$(1))_MAKEPARAM_$$(APP_PLATFORM)) -C $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)
+
+$(call AC_BUILD2_NAME,$(1))_defconfig $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)/Makefile:
+	if [ -x $$($(call AC_BUILD2_NAME,$(1))_dir)/configure ]; then \
+	  true; \
+	elif [ -x $$($(call AC_BUILD2_NAME,$(1))_dir)/autogen.sh ]; then \
+	  cd $$($(call AC_BUILD2_NAME,$(1))_dir) && ./autogen.sh; \
+	else \
+	  cd $$($(call AC_BUILD2_NAME,$(1))_dir) && autoreconf -fiv; \
+	fi
+	[ -d "$$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)" ] || $$(MKDIR) $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)
+	cd $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR) && \
+	  CPPFLAGS="$$(addprefix -I,$$(BUILD_SYSROOT)/include)" \
+	  LDFLAGS="$$(addprefix -L,$$(BUILD_SYSROOT)/lib)" \
+	  $$(BUILD_ENV) $$($(call AC_BUILD2_NAME,$(1))_dir)/configure --host=`$$(CC) -dumpmachine` \
+	      --prefix= $$($(call AC_BUILD2_NAME,$(1))_CFGPARAM) $$($(call AC_BUILD2_NAME,$(1))_CFGPARAM_$$(APP_PLATFORM))
+
+$(call AC_BUILD2_NAME,$(1))_install: DESTDIR=$$(BUILD_SYSROOT)
+
+$(call AC_BUILD2_NAME,$(1))_dist_install: DESTDIR=$$(BUILD_SYSROOT)
+$(call AC_BUILD2_NAME,$(1))_dist_install:
+	$$(RM) $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)_footprint
+	$$(call RUN_DIST_INSTALL1,$(call AC_BUILD2_NAME,$(1)),$$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)/Makefile)
+
+$(call AC_BUILD2_NAME,$(1)): $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)/Makefile
+	$$($(call AC_BUILD2_NAME,$(1))_MAKE) $$(BUILDPARALLEL:%=-j%)
+
+$(call AC_BUILD2_NAME,$(1))_%: $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)/Makefile
+	$$($(call AC_BUILD2_NAME,$(1))_MAKE) $$(BUILDPARALLEL:%=-j%) $$(@:$(call AC_BUILD2_NAME,$(1))_%=%)
+# end of AC_BUILD2
 endef
 
 #------------------------------------
