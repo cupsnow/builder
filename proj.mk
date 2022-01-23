@@ -184,44 +184,54 @@ define CP_TAR
 endef
 
 #------------------------------------
-# $(eval $(call AC_BUILD2,name dir))
+# $(eval $(call AC_BUILD3,name dir))
 #
-AC_BUILD2_NAME=$(word 1,$(1))
-AC_BUILD2_DIR=$(word 2,$(1))
-AC_BUILD2_BUILDDIR=$(word 3,$(1))
-define AC_BUILD2
-$(call AC_BUILD2_NAME,$(1))_dir=$$(firstword $$(wildcard $(call AC_BUILD2_DIR,$(1)) $$(PROJDIR)/package/$(call AC_BUILD2_NAME,$(1))))
-$(call AC_BUILD2_NAME,$(1))_BUILDDIR?=$(or $(call AC_BUILD2_BUILDDIR,$(1)),$$(BUILDDIR)/$(call AC_BUILD2_NAME,$(1))-$$(APP_BUILD))
-$(call AC_BUILD2_NAME,$(1))_MAKE=$$(MAKE) DESTDIR=$$(DESTDIR) $$($(call AC_BUILD2_NAME,$(1))_MAKEPARAM) \
-    $$($(call AC_BUILD2_NAME,$(1))_MAKEPARAM_$$(APP_PLATFORM)) -C $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)
+AC_BUILD3_NAME=$(word 1,$(1))
+AC_BUILD3_DIR=$(word 2,$(1))
+AC_BUILD3_BUILDDIR=$(word 3,$(1))
+define AC_BUILD3_HEAD
+$(call AC_BUILD3_NAME,$(1))_DIR=$$(firstword $$(wildcard $(call AC_BUILD3_DIR,$(1)) $$(PROJDIR)/package/$(call AC_BUILD3_NAME,$(1))))
+$(call AC_BUILD3_NAME,$(1))_BUILDDIR?=$(or $(call AC_BUILD3_BUILDDIR,$(1)),$$(BUILDDIR)/$(call AC_BUILD3_NAME,$(1))-$$(APP_BUILD))
+$(call AC_BUILD3_NAME,$(1))_MAKE=$$($(call AC_BUILD3_NAME,$(1))_MAKEENV_$$(APP_PLATFORM)) \
+    $$(MAKE) DESTDIR=$$(DESTDIR) $$($(call AC_BUILD3_NAME,$(1))_MAKEPARAM_$$(APP_PLATFORM)) \
+    -C $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)
 
-$(call AC_BUILD2_NAME,$(1))_defconfig $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)/Makefile:
-	if [ -x $$($(call AC_BUILD2_NAME,$(1))_dir)/configure ]; then \
+$(call AC_BUILD3_NAME,$(1))_defconfig $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile:
+	if [ -x $$($(call AC_BUILD3_NAME,$(1))_DIR)/configure ]; then \
 	  true; \
-	elif [ -x $$($(call AC_BUILD2_NAME,$(1))_dir)/autogen.sh ]; then \
-	  cd $$($(call AC_BUILD2_NAME,$(1))_dir) && ./autogen.sh; \
+	elif [ -x $$($(call AC_BUILD3_NAME,$(1))_DIR)/autogen.sh ]; then \
+	  cd $$($(call AC_BUILD3_NAME,$(1))_DIR) && ./autogen.sh; \
 	else \
-	  cd $$($(call AC_BUILD2_NAME,$(1))_dir) && autoreconf -fiv; \
+	  cd $$($(call AC_BUILD3_NAME,$(1))_DIR) && autoreconf -fiv; \
 	fi
-	[ -d "$$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)" ] || $$(MKDIR) $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)
-	cd $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR) && \
-	  CPPFLAGS="$$(addprefix -I,$$(BUILD_SYSROOT)/include)" \
-	  LDFLAGS="$$(addprefix -L,$$(BUILD_SYSROOT)/lib)" \
-	  $$(BUILD_ENV) $$($(call AC_BUILD2_NAME,$(1))_dir)/configure --host=`$$(CC) -dumpmachine` \
-	      --prefix= $$($(call AC_BUILD2_NAME,$(1))_CFGPARAM) $$($(call AC_BUILD2_NAME,$(1))_CFGPARAM_$$(APP_PLATFORM))
+	[ -d "$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)" ] || $$(MKDIR) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)
+	cd $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR) && \
+	  $$(or $$($(call AC_BUILD3_NAME,$(1))_CFGENV_$$(APP_PLATFORM)),$$(BUILD_ENV)) $$($(call AC_BUILD3_NAME,$(1))_DIR)/configure --host=`$$(CC) -dumpmachine` \
+	      --prefix="" $$($(call AC_BUILD3_NAME,$(1))_CFGPARAM_$$(APP_PLATFORM)) \
+	      CPPFLAGS="$$(addprefix -I,$$(BUILD_SYSROOT)/include)" \
+	      LDFLAGS="$$(addprefix -L,$$(BUILD_SYSROOT)/lib)"
 
-$(call AC_BUILD2_NAME,$(1))_install: DESTDIR=$$(BUILD_SYSROOT)
+$(call AC_BUILD3_NAME,$(1))_install: DESTDIR=$$(BUILD_SYSROOT)
 
-$(call AC_BUILD2_NAME,$(1))_dist_install: DESTDIR=$$(BUILD_SYSROOT)
-$(call AC_BUILD2_NAME,$(1))_dist_install:
-	$$(RM) $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)_footprint
-	$$(call RUN_DIST_INSTALL1,$(call AC_BUILD2_NAME,$(1)),$$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)/Makefile)
+$(call AC_BUILD3_NAME,$(1))_dist_install: DESTDIR=$$(BUILD_SYSROOT)
+$(call AC_BUILD3_NAME,$(1))_dist_install:
+	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
+	$$(call RUN_DIST_INSTALL1,$(call AC_BUILD3_NAME,$(1)),$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile)
+# end of AC_BUILD3_HEAD
+endef
 
-$(call AC_BUILD2_NAME,$(1)): $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)/Makefile
-	$$($(call AC_BUILD2_NAME,$(1))_MAKE) $$(BUILDPARALLEL:%=-j%)
+define AC_BUILD3_FOOT
+$(call AC_BUILD3_NAME,$(1)): $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile
+	$$($(call AC_BUILD3_NAME,$(1))_MAKE) $$(BUILDPARALLEL:%=-j%)
 
-$(call AC_BUILD2_NAME,$(1))_%: $$($(call AC_BUILD2_NAME,$(1))_BUILDDIR)/Makefile
-	$$($(call AC_BUILD2_NAME,$(1))_MAKE) $$(BUILDPARALLEL:%=-j%) $$(@:$(call AC_BUILD2_NAME,$(1))_%=%)
+$(call AC_BUILD3_NAME,$(1))_%: $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile
+	$$($(call AC_BUILD3_NAME,$(1))_MAKE) $$(BUILDPARALLEL:%=-j%) $$(@:$(call AC_BUILD3_NAME,$(1))_%=%)
+# end of AC_BUILD3_FOOT
+endef
+
+define AC_BUILD2
+$(call AC_BUILD3_HEAD,$(1))
+$(call AC_BUILD3_FOOT,$(1))
 # end of AC_BUILD2
 endef
 
