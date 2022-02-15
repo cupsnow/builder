@@ -184,18 +184,22 @@ define CP_TAR
 endef
 
 #------------------------------------
-# $(eval $(call AC_BUILD3,name dir))
+# $(eval $(call AC_BUILD2,$(AC) $(DIR) $(BUILDDIR)))
+# make AC="sox \$(PKGDIR2)/sox" APP_ATTR=ub20 sox_defconfig
 #
 AC_BUILD3_NAME=$(word 1,$(1))
-AC_BUILD3_DIR=$(word 2,$(1))
-AC_BUILD3_BUILDDIR=$(word 3,$(1))
 define AC_BUILD3_HEAD
-$(call AC_BUILD3_NAME,$(1))_DIR=$$(firstword $$(wildcard $(call AC_BUILD3_DIR,$(1)) $$(PROJDIR)/package/$(call AC_BUILD3_NAME,$(1))))
-$(call AC_BUILD3_NAME,$(1))_BUILDDIR?=$(or $(call AC_BUILD3_BUILDDIR,$(1)),$$(BUILDDIR)/$(call AC_BUILD3_NAME,$(1))-$$(APP_BUILD))
+$(call AC_BUILD3_NAME,$(1))_DIR=$$(firstword $$(wildcard $(word 2,$(1)) \
+    $$(PROJDIR)/package/$(call AC_BUILD3_NAME,$(1))))
+$(call AC_BUILD3_NAME,$(1))_BUILDDIR?=$(or $(word 3,$(1)), \
+    $$(BUILDDIR)/$(call AC_BUILD3_NAME,$(1))-$$(APP_BUILD))
 $(call AC_BUILD3_NAME,$(1))_MAKE=$$($(call AC_BUILD3_NAME,$(1))_MAKEENV_$$(APP_PLATFORM)) \
     $$(MAKE) DESTDIR=$$(DESTDIR) $$($(call AC_BUILD3_NAME,$(1))_MAKEPARAM_$$(APP_PLATFORM)) \
     -C $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)
+# end of AC_BUILD3_HEAD
+endef
 
+define AC_BUILD3_DEFCONFIG
 $(call AC_BUILD3_NAME,$(1))_defconfig $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile:
 	if [ -x $$($(call AC_BUILD3_NAME,$(1))_DIR)/configure ]; then \
 	  true; \
@@ -204,23 +208,42 @@ $(call AC_BUILD3_NAME,$(1))_defconfig $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/M
 	else \
 	  cd $$($(call AC_BUILD3_NAME,$(1))_DIR) && autoreconf -fiv; \
 	fi
-	[ -d "$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)" ] || $$(MKDIR) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)
+	[ -d "$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)" ] || \
+	    $$(MKDIR) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)
 	cd $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR) && \
-	  $$(or $$($(call AC_BUILD3_NAME,$(1))_CFGENV_$$(APP_PLATFORM)),$$(BUILD_ENV)) $$($(call AC_BUILD3_NAME,$(1))_DIR)/configure --host=`$$(CC) -dumpmachine` \
+	  $$(or $$($(call AC_BUILD3_NAME,$(1))_CFGENV_$$(APP_PLATFORM)),$$(BUILD_ENV)) \
+	      $$($(call AC_BUILD3_NAME,$(1))_DIR)/configure --host=`$$(CC) -dumpmachine` \
 	      --prefix="" $$($(call AC_BUILD3_NAME,$(1))_CFGPARAM_$$(APP_PLATFORM)) \
-	      CPPFLAGS="$$(addprefix -I,$$(BUILD_SYSROOT)/include)" \
-	      LDFLAGS="$$(addprefix -L,$$(BUILD_SYSROOT)/lib)"
+	      CPPFLAGS="$$(addprefix -I,$$(BUILD_SYSROOT)/include) \
+	      $$($(call AC_BUILD3_NAME,$(1))_CFGPARAM_CPPFLAGS_$$(APP_PLATFORM))" \
+	      LDFLAGS="$$(addprefix -L,$$(BUILD_SYSROOT)/lib $$(BUILD_SYSROOT)/lib64) \
+	      $$($(call AC_BUILD3_NAME,$(1))_CFGPARAM_LDFLAGS_$$(APP_PLATFORM))"
+# end of AC_BUILD3_DEFCONFIG
+endef
 
-$(call AC_BUILD3_NAME,$(1))_install: DESTDIR=$$(BUILD_SYSROOT)
+define AC_BUILD3_DIST_INSTALL
+$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint:
 
 $(call AC_BUILD3_NAME,$(1))_dist_install: DESTDIR=$$(BUILD_SYSROOT)
 $(call AC_BUILD3_NAME,$(1))_dist_install:
 	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
+	$(MAKE) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
 	$$(call RUN_DIST_INSTALL1,$(call AC_BUILD3_NAME,$(1)),$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile)
-# end of AC_BUILD3_HEAD
+# end of AC_BUILD3_DIST_INSTALL
+endef
+
+define AC_BUILD3_DISTCLEAN
+$(call AC_BUILD3_NAME,$(1))_distclean:
+	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)
+	if [ -x $$($(call AC_BUILD3_NAME,$(1))_DIR)/distclean.sh ]; then \
+	  $$($(call AC_BUILD3_NAME,$(1))_DIR)/distclean.sh; \
+	fi
+# end of AC_BUILD3_DISTCLEAN
 endef
 
 define AC_BUILD3_FOOT
+$(call AC_BUILD3_NAME,$(1))_install: DESTDIR=$$(BUILD_SYSROOT)
+
 $(call AC_BUILD3_NAME,$(1)): $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile
 	$$($(call AC_BUILD3_NAME,$(1))_MAKE) $$(BUILDPARALLEL:%=-j%)
 
@@ -231,6 +254,9 @@ endef
 
 define AC_BUILD2
 $(call AC_BUILD3_HEAD,$(1))
+$(call AC_BUILD3_DEFCONFIG,$(1))
+$(call AC_BUILD3_DIST_INSTALL,$(1))
+$(call AC_BUILD3_DISTCLEAN,$(1))
 $(call AC_BUILD3_FOOT,$(1))
 # end of AC_BUILD2
 endef
