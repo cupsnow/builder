@@ -1,66 +1,68 @@
 #!/bin/bash
-SELF=${BASH_SOURCE[0]}
-SELFDIR=`dirname $SELF`
-# SELFDIR=`realpath -L -s $SELFDIR`
-SELFDIR=`cd $SELFDIR && pwd -L`
 
-# size of 1st partition in MB
-SZ1=70
-OFFSET1=2
+_pri_self="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd -L)/$(basename ${BASH_SOURCE[0]})"
+
+_pri_sgr_red="\033[31;1m"
+_pri_sgr_cyan="\033[36;1m"
+_pri_sgr_reset="\033[m"
 
 log_ts () {
-  "echo" -n "`date '+%0y/%0m/%0d %0H:%0M:%0S:%0N'`"
+  date '+%0y/%0m/%0d %0H:%0M:%0S:%0N'
 }
 
-log_error () {
-  "echo" -e "\033[31;1m`log_ts` ERROR $*\033[0m"
+log_d () {
+  "echo" -e "${_pri_sgr_reset}[$(log_ts)][debug] $*"
 }
 
-
-log_debug () {
-  "echo" -e "\033[36;1m`log_ts` DEBUG $*\033[0m"
+log_e () {
+  "echo" -e "${_pri_sgr_red}[$(log_ts)][ERROR] $*${_pri_sgr_reset}"
 }
 
-# usage: error_exit ERRNO ERRMSG
-# print ERRMSG then exit when ERRNO != 0
-error_exit () {
-  [ "$1" = "0" ] && return 0
-  log_error "$*"
-  exit
+# malfunction when use stdio redirect
+cmd_run () {
+  log_d "Execute: $*"
+  "$@"
 }
 
 trap "housekeeping" SIGINT SIGTERM EXIT
 
-# enable to use temp directory
-# tmpdir=`mktemp -d`
-
-# housekeeping before exit
 housekeeping () {
-  # housekeeping whatever temp directory
-  [ "$tmpdir" ] && [ -e $tmpdir ] && (log_debug "remove $tmpdir"; rm -rf $tmpdir)
+  log_d "housekeeping"
 
-  # housekeeping more
-
-  # done
-  exit 255
+  local rc=$?
+  if [ "$_pri_tmpdir" ] && [ -e $_pri_tmpdir ]; then
+    cmd_run rm -rf $_pri_tmpdir
+  fi
+  exit $?
 }
 
-show_help() {
-cat <<EOF
-SYNOPSIS
-  $1 [OPTIONS]
+# size of 1st partition in MB
+_pri_sz1=250
+_pri_offset1=2
+_pri_uiquery=2
 
+# enable to use temp directory
+# _pri_tmpdir=`mktemp -d`
+
+show_help() {
+local prog="${1:-$(basename $_pri_self)}"
+cat <<EOF
+USAGE
+  $prog [OPTIONS] [DEV]
+
+DESCRIBE
     The 1st partition offset <$OFFSET1>MB
 
 OPTIONS
-  -h, --help   Show help
-  -d, --dev=DEV
-               SD card device[<>]
-  -s, --sz1=SZ1
-               Size of 1st partition in MB[<$SZ1>]
+  -h, --help      Show help
+  -d, --dev=DEV   SD card device
+  -q, --quiet     Less user interaction
+  --sz1=VAL       Size of 1st partition in MB[<$_pri_sz1>]
+  --offset1=VAL   Offset of 1st partition in MB[<$_pri_offset1>]
 
 EXAMPLES
-  $1 -d/dev/sdc -s77
+  $prog /dev/sdc
+  $prog --sz1=100 /dev/sdc
 
 EOF
 }

@@ -148,7 +148,7 @@ endef
 # bb_dist_install:
 # 	$(call RUN_DIST_INSTALL1,bb CONFIG_PREFIX,$(bb_BUILDDIR)_stain $(bb_BUILDDIR)/Makefile)
 #
-define RUN_DIST_INSTALL1
+define RUN_DIST_PACK1
 if ! md5sum -c "$($(firstword $(1))_BUILDDIR).md5sum"; then \
   $(MAKE) $(or $(word 2,$(1)),DESTDIR)=$($(firstword $(1))_BUILDDIR)_destdir \
       $(firstword $(1))_install && \
@@ -160,6 +160,10 @@ if ! md5sum -c "$($(firstword $(1))_BUILDDIR).md5sum"; then \
       > $($(firstword $(1))_BUILDDIR).md5sum && \
   $(RM) $($(firstword $(1))_BUILDDIR)_destdir; \
 fi
+endef
+
+define RUN_DIST_INSTALL1
+$(call RUN_DIST_PACK1,$(1),$(2))
 [ -d "$($(or $(word 2,$(1)),DESTDIR))" ] || $(MKDIR) $($(or $(word 2,$(1)),DESTDIR))
 tar -xvf $($(firstword $(1))_BUILDDIR).tar --strip-components=1 \
     -C $($(or $(word 2,$(1)),DESTDIR))
@@ -224,6 +228,11 @@ endef
 define AC_BUILD3_DIST_INSTALL
 $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint:
 
+$(call AC_BUILD3_NAME,$(1))_dist_pack:
+	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
+	$(MAKE) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
+	$$(call RUN_DIST_PACK1,$(call AC_BUILD3_NAME,$(1)),$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile)
+
 $(call AC_BUILD3_NAME,$(1))_dist_install: DESTDIR=$$(BUILD_SYSROOT)
 $(call AC_BUILD3_NAME,$(1))_dist_install:
 	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
@@ -237,7 +246,7 @@ $(call AC_BUILD3_NAME,$(1))_distclean:
 	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)
 	if [ -x $$($(call AC_BUILD3_NAME,$(1))_DIR)/distclean.sh ]; then \
 	  $$($(call AC_BUILD3_NAME,$(1))_DIR)/distclean.sh; \
-	fi
+	f1i
 # end of AC_BUILD3_DISTCLEAN
 endef
 
