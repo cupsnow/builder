@@ -1,4 +1,7 @@
-import inspect, logging
+#!/usr/bin/env python3
+# compatable python3.8 later
+
+import inspect, logging, os, subprocess
 
 logger = logging.getLogger("builder")
 
@@ -165,3 +168,15 @@ def hdParse(str, base = 16):
 		arr.extend(lineArr)
 	return arr
 
+def shEnv(*extpath):
+	env = os.environ.copy()
+	env["PATH"] = os.pathsep.join([*extpath, env["PATH"]])
+	return env
+
+def shRun(cmd, **kwargs):
+	if ((kwargs.get("env") == None)
+			and (extpath := kwargs.pop("extpath", None))):
+		kwargs.update({"env": shEnv(*extpath)})
+	resp = subprocess.run(cmd, shell=True, capture_output=True, text=True,
+			**kwargs)
+	return resp.returncode, resp.stdout.strip()

@@ -53,8 +53,8 @@ STRIP=$(CROSS_COMPILE)strip
 READELF=$(CROSS_COMPILE)readelf
 RANLIB=$(CROSS_COMPILE)ranlib
 MKDIR=mkdir -p
-#CP=cp -dpR
-CP=rsync -a --info=progress2
+CP=cp -dpR -v
+RSYNC=rsync -r --info=progress2
 RM=rm -rf
 INSTALL_STRIP=install --strip-program=$(STRIP) -s
 DOXYGEN=doxygen
@@ -170,6 +170,15 @@ tar -xvf $($(firstword $(1))_BUILDDIR).tar --strip-components=1 \
 endef
 
 #------------------------------------
+define GIT_ARCHIVE
+[ -d $(dir $(1)) ] || $(MKDIR) $(dir $(1))
+cd $(2) && \
+  git archive -o $(1) --prefix=$(basename $(notdir $(1)))/ $(or $(3),HEAD) && \
+  git submodule foreach 'cd $$toplevel; tar -rf $(1) --transform="s/^/$(basename $(notdir $(1)))\//" $$sm_path'
+# end of GIT_ARCHIVE
+endef
+
+#------------------------------------
 # $(call CP_TAR,$(DESTDIR),$(TOOLCHAIN_SYSROOT), \
 #   --exclude="*/gconv" --exclude="*.a" --exclude="*.o" --exclude="*.la", \
 #   lib lib64 usr/lib usr/lib64)
@@ -231,13 +240,13 @@ $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint:
 $(call AC_BUILD3_NAME,$(1))_dist_pack:
 	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
 	$(MAKE) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
-	$$(call RUN_DIST_PACK1,$(call AC_BUILD3_NAME,$(1)),$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile)
+	$$(call RUN_DIST_PACK1,$(call AC_BUILD3_NAME,$(1)),$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile $(2))
 
 $(call AC_BUILD3_NAME,$(1))_dist_install: DESTDIR=$$(BUILD_SYSROOT)
 $(call AC_BUILD3_NAME,$(1))_dist_install:
 	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
 	$(MAKE) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
-	$$(call RUN_DIST_INSTALL1,$(call AC_BUILD3_NAME,$(1)),$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile)
+	$$(call RUN_DIST_INSTALL1,$(call AC_BUILD3_NAME,$(1)),$$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)/Makefile $(2))
 # end of AC_BUILD3_DIST_INSTALL
 endef
 
@@ -246,7 +255,7 @@ $(call AC_BUILD3_NAME,$(1))_distclean:
 	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)
 	if [ -x $$($(call AC_BUILD3_NAME,$(1))_DIR)/distclean.sh ]; then \
 	  $$($(call AC_BUILD3_NAME,$(1))_DIR)/distclean.sh; \
-	f1i
+	fi
 # end of AC_BUILD3_DISTCLEAN
 endef
 
@@ -264,7 +273,7 @@ endef
 define AC_BUILD2
 $(call AC_BUILD3_HEAD,$(1))
 $(call AC_BUILD3_DEFCONFIG,$(1))
-$(call AC_BUILD3_DIST_INSTALL,$(1))
+$(call AC_BUILD3_DIST_INSTALL,$(1),$(2))
 $(call AC_BUILD3_DISTCLEAN,$(1))
 $(call AC_BUILD3_FOOT,$(1))
 # end of AC_BUILD2
