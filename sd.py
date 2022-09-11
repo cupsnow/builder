@@ -26,6 +26,7 @@ def main(argv = sys.argv):
 			formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	argparser.add_argument("--sz1", default=250, type=int, help="Size of 1st partition in MB")
 	argparser.add_argument("--offset1", default=2, type=int, help="Offset of 1st partition in MB")
+	argparser.add_argument("--bpiboot", default=None, help="Bootloader for BPI, u-boot-sunxi-with-spl.bin")
 	argparser.add_argument("-q", "--quiet",  action="store_true", help="Less user interaction")
 	argparser.add_argument("-n", "--dryrun", action="store_true", help="No harm action only")
 	argparser.add_argument("dev", default=None, help="SDCard Device")
@@ -115,6 +116,14 @@ def main(argv = sys.argv):
 		logger.debug(f"sudo mkfs.ext4 return code: {eno}, stdout:\n{resp}")
 		if eno != 0:
 			logger.error("Failed mkfs.ext4")
+			sys.exit(1)
+
+	if args.bpiboot:
+		cmd = f"sudo dd if={args.bpiboot} of={args.dev} bs=1024 seek=8"
+		eno, resp = shRun(cmd)
+		logger.debug(f"sudo dd {args.bpiboot} return code: {eno}, stdout:\n{resp}")
+		if eno != 0:
+			logger.error("Failed sudo dd")
 			sys.exit(1)
 
 	with tempfile.TemporaryDirectory() as tmpdir:

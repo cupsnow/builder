@@ -2,6 +2,9 @@
 # version suggest
 #   from git: `git describe --always`
 #
+# show gcc default include path
+#   `gcc -print-prog-name=cc1plus` -v # cc1
+#
 # usage
 #   PROJDIR?=$(abspath $(firstword $(wildcard ./builder ../builder))/..)
 #   -include $(PROJDIR:%=%/)builder/site.mk
@@ -53,12 +56,14 @@ STRIP=$(CROSS_COMPILE)strip
 READELF=$(CROSS_COMPILE)readelf
 RANLIB=$(CROSS_COMPILE)ranlib
 MKDIR=mkdir -p
-CP=cp -dpR -v
-RSYNC=rsync -r --info=progress2
+RSYNC=rsync -a --info=progress
+CP=cp -dpR
 RM=rm -rf
 INSTALL_STRIP=install --strip-program=$(STRIP) -s
 DOXYGEN=doxygen
 CC_TARGET_HELP=$(CC) $(PLATFORM_CFLAGS) $(PLATFORM_LDFLAGS) -Q --help=target
+
+# echo -e "$(ANSI_GREEN)ansi color test$(ANSI_NORMAL)"
 ANSI_SGR=\033[$(1)m
 ANSI_RED=$(call ANSI_SGR,31)
 ANSI_GREEN=$(call ANSI_SGR,32)
@@ -67,6 +72,9 @@ ANSI_CYAN=$(call ANSI_SGR,36)
 ANSI_YELLOW=$(call ANSI_SGR,33)
 ANSI_MAGENTA=$(call ANSI_SGR,35)
 ANSI_NORMAL=$(ANSI_SGR)
+ANSI_COLOR_DEMO=echo -e "Color demo: $(strip $(foreach i, \
+    RED GREEN BLUE CYAN YELLOW MAGENTA, \
+    $(ANSI_$(i))$(i))$(ANSI_NORMAL))"
 
 ELFDEP=$(READELF) -d $1 | sed -nE "s/.*\(NEEDED\)\s+Shared library:\s*\[(.*)\]/\1/gp"
 
@@ -82,6 +90,17 @@ ELFDEP=$(READELF) -d $1 | sed -nE "s/.*\(NEEDED\)\s+Shared library:\s*\[(.*)\]/\
 #
 DEP=$(1).d
 DEPFLAGS=-MM -MF $(call DEP,$(1)) -MT $(1)
+
+JOBJ=$(shell python -c " \
+  import json; \
+  f = open('$1'); \
+  jobj = json.load(f); \
+  f.close(); \
+  print(jobj$2)")
+
+LSBID=$(shell lsb_release -i \
+  | sed -En "s/Distributor ID:\s*(.*)/\1/p" \
+  | tr [:upper:] [:lower:])
 
 #------------------------------------
 #var_%:
@@ -194,6 +213,41 @@ define CP_TAR
 	      --transform="s/$$PAT1//" $(3) \
 	      $(2)/$$i | tar -xv -C $(1) ;}; \
 	  done
+endef
+
+#------------------------------------
+#
+BUILD_CMAKE1_NAME=$(word 1,$(1))
+define BUILD_CMAKE1_HEAD
+$(call BUILD_CMAKE1_NAME,$(1))_DIR=$(or $(word 2,$(1)),$(wildcard $(PROJDIR)/package/$(call BUILD_CMAKE1_NAME,$(1)) $(PKGDIR2)/$(call BUILD_CMAKE1_NAME,$(1))))
+$(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR=$(or $(word 3,$(1)),$$(PROJDIR)/build/$(call BUILD_CMAKE1_NAME,$(1))-$$(APP_PLATFORM))
+$(call BUILD_CMAKE1_NAME,$(1))_CMAKEARGS0?=-DCMAKE_INSTALL_PREFIX=$$(BUILD_SYSROOT) \
+    -DCMAKE_PREFIX_PATH=$$(BUILD_SYSROOT)
+$(call BUILD_CMAKE1_NAME,$(1))_CMAKEARGS+=$$($(call BUILD_CMAKE1_NAME,$(1))_CMAKEARGS0)
+# end of BUILD_CMAKE1_HEAD
+endef
+
+define BUILD_CMAKE1_DEFCONFIG
+$(call BUILD_CMAKE1_NAME,$(1))_defconfig $$($(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR)/Makefile:
+	[ -d $$($(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR) ] || $$(MKDIR) $$($(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR)
+	cd $$($(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR) && cmake $$($(call BUILD_CMAKE1_NAME,$(1))_CMAKEARGS) $$($(call BUILD_CMAKE1_NAME,$(1))_DIR)
+# end of BUILD_CMAKE1_DEFCONFIG
+endef
+
+define BUILD_CMAKE1_TAIL
+$(call BUILD_CMAKE1_NAME,$(1)): | $$($(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR)/Makefile
+	$$(MAKE) $$($(call BUILD_CMAKE1_NAME,$(1))_MAKEARGS) -C $$($(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR)
+
+$(call BUILD_CMAKE1_NAME,$(1))_%: | $$($(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR)/Makefile
+	$$(MAKE) $$($(call BUILD_CMAKE1_NAME,$(1))_MAKEARGS) -C $$($(call BUILD_CMAKE1_NAME,$(1))_BUILDDIR) $$(@:$(call BUILD_CMAKE1_NAME,$(1))_%=%)
+# end of BUILD_CMAKE1_TAIL
+endef
+
+define BUILD_CMAKE1
+$(call BUILD_CMAKE1_HEAD,$(1)$(2)$(3))
+$(call BUILD_CMAKE1_DEFCONFIG,$(1)$(2)$(3))
+$(call BUILD_CMAKE1_TAIL,$(1)$(2)$(3))
+# end of BUILD_CMAKE1
 endef
 
 #------------------------------------
