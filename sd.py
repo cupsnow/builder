@@ -1,21 +1,14 @@
 #!/usr/bin/env python3
 import sys, os, logging, argparse, re, shlex, subprocess, tempfile
+import builder
 
 logging.basicConfig(level=logging.NOTSET,
 		format="[%(asctime)s][%(levelname)s][%(name)s][%(funcName)s][#%(lineno)d]%(message)s")
 
 logger = logging.getLogger("sd")
 
-def guessIpy():
-	try:
-		return get_ipython().__class__.__name__
-	except:
-		pass
-
 def shRun(cmd, **kwargs):
-	resp = subprocess.run(cmd, shell=True, text=True, capture_output=True
-			# , stderr=subprocess.STDOUT
-			, **kwargs)
+	resp = builder.run_cmd(cmd, **kwargs)
 	return resp.returncode, resp.stdout.strip()
 
 def main(argv = sys.argv):
@@ -58,12 +51,13 @@ def main(argv = sys.argv):
 		logger.error(f"System might corrupt when use {args.dev} (udev: {resp})")
 		sys.exit(1)
 
-	print(f"Request sudo to list partition of {args.dev}")
-	sudo = "sudo"
+	sudok = "sudo"
 	if not args.quiet:
-		sudo += " -k"
-	eno, resp = shRun(f"{sudo} sfdisk -l {args.dev}")
-	logger.debug(f"{sudo} sfdisk return code: {eno}, stdout:\n{resp}")
+		sudok += " -k"
+
+	print(f"Request sudo to list partition of {args.dev}")
+	eno, resp = shRun(f"sudo sfdisk -l {args.dev}")
+	logger.debug(f"sudo sfdisk return code: {eno}, stdout:\n{resp}")
 	if eno != 0:
 		logger.error("Failed list partition")
 		sys.exit(1)
@@ -75,7 +69,7 @@ def main(argv = sys.argv):
 	# 0x6 fat16
 	fs1FatId=0xc
 
-	cmd = f"sudo sfdisk {args.dev}"
+	cmd = f"{sudok} sfdisk {args.dev}"
 	cmdIn = (f"{args.offset1}M,{args.sz1}M,{fs1FatId:x}"
 			f"\n{args.sz1 + 1}M,,L,-")
 	if args.dryrun:
@@ -160,10 +154,8 @@ def main(argv = sys.argv):
 
 	shRun("sync; sleep 1")
 
-# jupyter?
 if __name__ == "__main__":
-	if ipy := guessIpy():
-		# logger.debug("guess ipython {}".format(ipy))
+	if ipy := builder.guess_ipy():
 		argv = shlex.split("sd.py -n /dev/sde".split())
 		main(argv)
 	else:
