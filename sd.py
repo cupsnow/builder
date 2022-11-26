@@ -63,7 +63,7 @@ def main(argv = sys.argv):
 		sys.exit(1)
 
 	if not args.quiet:
-		input(f"Ctrl-C to break or press Enter to continue")
+		input(f"!!! Ctrl-C to break or press Enter to format {args.dev}")
 
 	# 0xc W95 FAT32 (LBA)
 	# 0x6 fat16

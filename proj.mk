@@ -1,4 +1,10 @@
 #------------------------------------
+# Take care with 'rsync -R', consider following scenario
+#   - toolchain use lib64 as default shared library path
+#   - symlink lib64 to lib for compatability
+#   - this command will break the symlink lib64
+#         'cd $(SYSROOT) && rsync -aR lib64 $(ROOTFS)/'
+#
 # version suggest
 #   from git: `git describe --always`
 #
@@ -57,6 +63,7 @@ READELF=$(CROSS_COMPILE)readelf
 RANLIB=$(CROSS_COMPILE)ranlib
 MKDIR=mkdir -p
 RSYNC=rsync -a --info=progress
+RSYNC_ANY=$(RSYNC) --ignore-missing-args
 CP=cp -dpR
 RM=rm -rf
 INSTALL_STRIP=install --strip-program=$(STRIP) -s
@@ -290,6 +297,7 @@ endef
 
 define AC_BUILD3_DIST_INSTALL
 $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint:
+# left the recipe for user
 
 $(call AC_BUILD3_NAME,$(1))_dist_pack:
 	$$(RM) $$($(call AC_BUILD3_NAME,$(1))_BUILDDIR)_footprint
